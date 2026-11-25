@@ -11,22 +11,30 @@ import android.os.Build
 
 class AlarmReceiver : BroadcastReceiver() {
     override fun onReceive(c: Context, i: Intent) {
-        val title = i.getStringExtra("title") ?: "JARVIS Alert"
+        val title = i.getStringExtra("title") ?: "Jarrven Alert"
         val msg = i.getStringExtra("msg") ?: "Time for scheduled activity"
         val nm = c.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        val channelId = "jarvis_alerts"
+        val channelId = "jarrven_alerts"
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val ch = NotificationChannel(channelId, "JARVIS Alerts", NotificationManager.IMPORTANCE_HIGH)
-            ch.enableVibration(true)
+            val ch = NotificationChannel(channelId, "Jarrven Alerts", NotificationManager.IMPORTANCE_HIGH).apply {
+                enableVibration(true)
+                description = "Jarrven Alarm and Reminder Notifications"
+            }
             nm.createNotificationChannel(ch)
         }
-        val open = PendingIntent.getActivity(c, 0, Intent(c, MainActivity::class.java),
-            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
-        val n = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        val open = PendingIntent.getActivity(
+            c,
+            0,
+            Intent(c, MainActivity::class.java),
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+        )
+        val builder = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             Notification.Builder(c, channelId)
         } else {
+            @Suppress("DEPRECATION")
             Notification.Builder(c)
-        }.setSmallIcon(android.R.drawable.ic_popup_reminder)
+        }
+        val n = builder.setSmallIcon(android.R.drawable.ic_popup_reminder)
             .setContentTitle(title)
             .setContentText(msg)
             .setContentIntent(open)
