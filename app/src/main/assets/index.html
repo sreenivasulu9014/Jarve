@@ -66,9 +66,35 @@
     if (window.isAndroidApp && Android.listen) { Android.listen(lang || "te-IN"); }
   }
   function onSpeech(text) {
-    const input = document.getElementById("chatInput") || document.querySelector("input[type=text]");
+    if (!text || !text.trim()) return;
+    const input = document.getElementById("chatInput");
     if (input) { input.value = text; }
+    if (typeof handleSpokenVoiceInput === 'function') {
+      handleSpokenVoiceInput(text);
+    }
   }
+  window.onTtsStart = function() {
+    const orb = document.getElementById('voiceOrb');
+    const waveform = document.getElementById('waveform');
+    if (orb) orb.classList.add('ring-4', 'ring-teal-300', 'animate-pulse');
+    if (waveform) waveform.classList.remove('hidden');
+  };
+  window.onTtsEnd = function() {
+    const orb = document.getElementById('voiceOrb');
+    const waveform = document.getElementById('waveform');
+    if (orb) orb.classList.remove('ring-4', 'ring-teal-300', 'animate-pulse');
+    if (waveform) waveform.classList.add('hidden');
+  };
+  window.onListenStart = function() {
+    updateVoiceUI(true, "వింటూ ఉన్నాను... (Listening)");
+    const wf = document.getElementById('waveform');
+    if (wf) wf.classList.remove('hidden');
+  };
+  window.onListenEnd = function() {
+    updateVoiceUI(false, "సిద్ధంగా ఉంది (Ready to Speak)");
+    const wf = document.getElementById('waveform');
+    if (wf) wf.classList.add('hidden');
+  };
   function onSpeechError(err) { console.warn(err); }
 </script>
 </head>
@@ -100,7 +126,7 @@
   </div>
 
   <!-- Main Container -->
-  <div class="max-w-4xl mx-auto w-full p-3 sm:p-6 flex-1 flex flex-col gap-5">
+  <div id="homeSection" class="max-w-4xl mx-auto w-full p-3 sm:p-6 flex-1 flex flex-col gap-5 pb-24">
     
     <!-- Top Header -->
     <header class="flex flex-wrap items-center justify-between gap-3 bg-white dark:bg-zinc-900 p-4 rounded-2xl shadow-sm border border-slate-200 dark:border-zinc-800">
@@ -520,6 +546,7 @@
       </div>
     </div>
 
+    <div id="istScheduleSection"></div>
     <!-- Comprehensive Indian Standard Time (IST UTC+05:30) 24-Hour Schedule & Data Monitoring Table -->
     <div class="bg-white dark:bg-zinc-900 rounded-3xl p-5 shadow-sm border border-slate-200 dark:border-zinc-800">
       <div class="flex flex-wrap items-center justify-between pb-3 mb-3 border-b border-slate-100 dark:border-zinc-800 gap-2">
@@ -1090,6 +1117,10 @@
     }
 
     function toggleVoiceAssistant() {
+      if (typeof Android !== 'undefined' && Android.listen) {
+        Android.listen(appState.language || 'te-IN');
+        return;
+      }
       if (!recognition) initSpeechRecognition();
 
       if (isListening) {
@@ -1129,22 +1160,34 @@
       }
     }
 
-    // Call Backend AI Agent Server at localhost:3000
+    // Call Backend AI Agent Server (Checks custom IP, LAN IP, then Localhost)
     async function syncQueryWithBackendServer(queryText) {
-      try {
-        const res = await fetch('http://localhost:3000/api/chat', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            query: queryText,
-            lang: (appState.language && appState.language.startsWith('te')) ? 'te' : 'en'
-          })
-        });
-        if (res.ok) {
-          const data = await res.json();
-          return data;
-        }
-      } catch (err) {}
+      const savedHost = (appState.settings && appState.settings.backendHost) ? appState.settings.backendHost : '192.168.31.184:3000';
+      const endpoints = [
+        `http://${savedHost}/api/chat`,
+        'http://localhost:3000/api/chat',
+        'http://10.0.2.2:3000/api/chat'
+      ];
+      for (const url of endpoints) {
+        try {
+          const ctrl = new AbortController();
+          const tid = setTimeout(() => ctrl.abort(), 3500);
+          const res = await fetch(url, {
+            method: 'POST',
+            signal: ctrl.signal,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              query: queryText,
+              lang: (appState.language && appState.language.startsWith('te')) ? 'te' : 'en'
+            })
+          });
+          clearTimeout(tid);
+          if (res.ok) {
+            const data = await res.json();
+            return data;
+          }
+        } catch (err) {}
+      }
       return null;
     }
 
@@ -1213,6 +1256,9 @@
     
     // Interrupt speech playback immediately (Barge-in / Stop speaking)
     window.interruptAssistantSpeech = function() {
+      if (typeof Android !== 'undefined' && Android.stopSpeaking) {
+        Android.stopSpeaking();
+      }
       if ('speechSynthesis' in window) {
         window.speechSynthesis.cancel();
       }
@@ -1238,6 +1284,11 @@
       if (orb) orb.classList.add('ring-4', 'ring-teal-300', 'animate-pulse');
       if (waveform) waveform.classList.remove('hidden');
 
+      // Native Android TTS takes priority for audible sound on phone
+      if (typeof Android !== 'undefined' && Android.speak) {
+        Android.speak(message, appState.language || 'te-IN');
+        return;
+      }
       if (!synth) return;
       if (synth.speaking) synth.cancel();
 
@@ -2635,6 +2686,84 @@
         document.getElementById('emergencyCallBtn').href = `tel:${appState.settings.emergencyContact}`;
       }
     });
+  
+  // Sync scheduled routine alarms with native Android AlarmManager
+  function syncAlarmsWithAndroid() {
+    if (typeof Android === 'undefined' || !Android.setAlarms) return;
+    try {
+      const now = new Date();
+      const alarms = [];
+      const dayMenu = (typeof WEEKLY_MENU !== 'undefined') ? WEEKLY_MENU[appState.selectedDayIndex] : {};
+
+      const scheduleItems = [
+        { id: "wakeup_alarm", time: "06:30", title: "Jarrven Wake-up Alert", msg: "శుభోదయం! సమయం 6:30 AM. సుఖనిద్ర విచారణ సమయం." },
+        { id: "water_morning", time: "06:45", title: "Jarrven Hydration Alert", msg: "గోరువెచ్చని నీరు త్రాగే సమయం." },
+        { id: "walk_morning", time: "07:00", title: "Jarrven Routine", msg: "లలిత నడక సమయం (15-20 నిమిషాలు)." },
+        { id: "breakfast_alert", time: "08:00", title: "Jarrven Breakfast Alert", msg: "పౌష్టిక అల్పాహార సమయం." },
+        { id: "medicine_morning", time: "09:30", title: "Jarrven Medicine Alert", msg: "సూచించిన మందులు తీసుకునే సమయం." },
+        { id: "lunch_alert", time: "13:00", title: "Jarrven Lunch Alert", msg: "మధ్యాహ్న భోజన సమయం." },
+        { id: "rest_afternoon", time: "14:00", title: "Jarrven Rest Reminder", msg: "మధ్యాహ్న విశ్రాంతి సమయం." },
+        { id: "snack_alert", time: "17:00", title: "Jarrven Snack Reminder", msg: "సాయంత్రపు స్నాక్ & నీటి సమయం." },
+        { id: "dinner_alert", time: "20:00", title: "Jarrven Dinner Alert", msg: "రాత్రి భోజన సమయం." },
+        { id: "sleep_alert", time: "22:00", title: "Jarrven Sleep Alert", msg: "ప్రశాంత నిద్రకు ఉపక్రమించే సమయం." }
+      ];
+
+      scheduleItems.forEach(item => {
+        const parts = item.time.split(":");
+        const target = new Date();
+        target.setHours(parseInt(parts[0], 10), parseInt(parts[1], 10), 0, 0);
+        if (target.getTime() < now.getTime()) {
+          target.setDate(target.getDate() + 1); // Schedule for tomorrow
+        }
+        alarms.push({
+          id: item.id,
+          title: item.title,
+          msg: item.msg,
+          at: target.getTime()
+        });
+      });
+
+      Android.setAlarms(JSON.stringify(alarms));
+    } catch(err) {
+      console.warn("Alarm sync error:", err);
+    }
+  }
+
+  // Run sync on startup
+  setTimeout(syncAlarmsWithAndroid, 2500);
+</script>
+
+  <!-- Native Mobile Bottom Navigation Bar -->
+  <nav class="fixed bottom-0 left-0 right-0 z-50 bg-[#0c1222]/95 backdrop-blur-md border-t border-cyan-900/40 px-2 py-2 flex items-center justify-around shadow-2xl safe-area-pb">
+    <button onclick="scrollToSection('homeSection')" class="flex flex-col items-center gap-1 text-cyan-400 focus:outline-none">
+      <span class="text-lg">🏠</span>
+      <span class="text-[10px] font-semibold tracking-wide">Home</span>
+    </button>
+    <button onclick="scrollToSection('chatInputSection')" class="flex flex-col items-center gap-1 text-slate-400 hover:text-cyan-300 focus:outline-none">
+      <span class="text-lg">💬</span>
+      <span class="text-[10px] font-medium tracking-wide">Chat</span>
+    </button>
+    <button onclick="toggleVoiceAssistant()" class="flex flex-col items-center justify-center w-12 h-12 -mt-5 rounded-full bg-gradient-to-tr from-cyan-500 to-blue-600 shadow-lg shadow-cyan-500/50 text-white text-2xl border-2 border-[#0c1222] active:scale-90 transition">
+      🎙️
+    </button>
+    <button onclick="scrollToSection('istScheduleSection')" class="flex flex-col items-center gap-1 text-slate-400 hover:text-cyan-300 focus:outline-none">
+      <span class="text-lg">📅</span>
+      <span class="text-[10px] font-medium tracking-wide">Planner</span>
+    </button>
+    <button onclick="openModal('settingsModal')" class="flex flex-col items-center gap-1 text-slate-400 hover:text-cyan-300 focus:outline-none">
+      <span class="text-lg">⚙️</span>
+      <span class="text-[10px] font-medium tracking-wide">Settings</span>
+    </button>
+  </nav>
+
+  <script>
+    function scrollToSection(id) {
+      const el = document.getElementById(id);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }
   </script>
+
 </body>
 </html>
