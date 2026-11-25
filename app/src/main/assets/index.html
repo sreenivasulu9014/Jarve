@@ -1,0 +1,2640 @@
+<!DOCTYPE html>
+<html lang="te">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>JARVIS AI Companion - Universal Life, Health & Care Assistant</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Noto+Sans+Telugu:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Outfit', 'Noto Sans Telugu', 'sans-serif'],
+          },
+          colors: {
+            jarvis: {
+              50: '#f0fdfa',
+              100: '#ccfbf1',
+              500: '#14b8a6',
+              600: '#0d9488',
+              700: '#0f766e',
+              glow: '#00f2fe'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      font-family: 'Outfit', 'Noto Sans Telugu', sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .pulse-glow {
+      box-shadow: 0 0 35px rgba(20, 184, 166, 0.7);
+      animation: pulseAnimation 1.6s infinite ease-in-out;
+    }
+    @keyframes pulseAnimation {
+      0%, 100% { transform: scale(1); box-shadow: 0 0 20px rgba(20, 184, 166, 0.4); }
+      50% { transform: scale(1.06); box-shadow: 0 0 45px rgba(20, 184, 166, 0.85); }
+    }
+    .wave-bar {
+      animation: wave 1s infinite ease-in-out alternate;
+    }
+    .wave-bar:nth-child(2) { animation-delay: 0.15s; }
+    .wave-bar:nth-child(3) { animation-delay: 0.3s; }
+    .wave-bar:nth-child(4) { animation-delay: 0.45s; }
+    .wave-bar:nth-child(5) { animation-delay: 0.2s; }
+    @keyframes wave {
+      0% { height: 6px; }
+      100% { height: 26px; }
+    }
+  </style>
+<script>
+  window.isAndroidApp = typeof Android !== "undefined";
+  function nativeSpeak(text, lang) {
+    if (window.isAndroidApp && Android.speak) { Android.speak(text, lang || "te-IN"); }
+    else if (window.speechSynthesis) {
+      const u = new SpeechSynthesisUtterance(text); u.lang = lang || "te-IN";
+      window.speechSynthesis.speak(u);
+    }
+  }
+  function nativeListen(lang) {
+    if (window.isAndroidApp && Android.listen) { Android.listen(lang || "te-IN"); }
+  }
+  function onSpeech(text) {
+    const input = document.getElementById("chatInput") || document.querySelector("input[type=text]");
+    if (input) { input.value = text; }
+  }
+  function onSpeechError(err) { console.warn(err); }
+</script>
+</head>
+<body class="bg-slate-50 dark:bg-zinc-950 text-slate-800 dark:text-zinc-100 min-h-screen flex flex-col antialiased transition-colors duration-200">
+
+  <!-- Medical Safety Banner -->
+  <aside aria-label="వైద్య సలహా ప్రకటన" class="bg-amber-500 text-zinc-950 px-4 py-2 text-xs md:text-sm font-medium flex items-center justify-between sticky top-0 z-50 shadow-sm">
+    <div class="flex items-center gap-2 max-w-4xl mx-auto w-full">
+      <span class="text-base">⚠️</span>
+      <span><strong>వైద్య రక్షణ సూచన (Medical Safety):</strong> ఈ అసిస్టెంట్ దినచర్య సహాయం కొరకు మాత్రమే, వైద్యునికి ప్రత్యామ్నాయం కాదు. ఏదైనా అత్యవసర స్థితిలో వెంటనే వైద్యుడిని సంప్రదించండి.</span>
+    </div>
+    <button onclick="openModal('emergencyModal')" class="bg-red-600 hover:bg-red-700 text-white font-bold px-3 py-1 rounded text-xs ml-2 whitespace-nowrap shadow transition">
+      🚨 అత్యవసర సహాయం (Emergency)
+    </button>
+  </aside>
+
+  <!-- Advance 1-Hour Reminder Toast Notification -->
+  <div id="advanceReminderBanner" class="hidden bg-teal-900 text-teal-100 px-4 py-2.5 text-xs border-b border-teal-700 flex items-center justify-between transition-all">
+    <div class="flex items-center gap-2 max-w-4xl mx-auto w-full">
+      <span class="text-base">⏰</span>
+      <span id="advanceReminderText">1 గంట ముందు ముందస్తు రిమైండర్ సిద్ధంగా ఉంది...</span>
+    </div>
+    <div class="flex gap-2">
+      <button onclick="speakAdvanceReminder()" class="bg-teal-700 hover:bg-teal-600 px-2 py-0.5 rounded font-semibold text-[11px] whitespace-nowrap">
+        🔊 వినండి
+      </button>
+      <button onclick="dismissAdvanceReminder()" class="text-teal-300 hover:text-white font-bold ml-2">✕</button>
+    </div>
+  </div>
+
+  <!-- Main Container -->
+  <div class="max-w-4xl mx-auto w-full p-3 sm:p-6 flex-1 flex flex-col gap-5">
+    
+    <!-- Top Header -->
+    <header class="flex flex-wrap items-center justify-between gap-3 bg-white dark:bg-zinc-900 p-4 rounded-2xl shadow-sm border border-slate-200 dark:border-zinc-800">
+      <div class="flex items-center gap-3">
+        <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-teal-500 to-emerald-400 flex items-center justify-center text-white text-2xl shadow-md">
+          🤰
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h1 class="text-xl font-bold tracking-tight bg-gradient-to-r from-teal-600 to-emerald-600 bg-clip-text text-transparent">
+              JARVIS Universal AI Companion
+            </h1>
+            <span class="text-xs bg-emerald-100 text-emerald-800 dark:bg-emerald-900/60 dark:text-emerald-300 font-semibold px-2 py-0.5 rounded-full">All-in-One Life & Health Assistant</span>
+          </div>
+          <p id="currentLiveClock" class="text-xs text-slate-500 dark:text-zinc-400 mt-0.5">
+            సమయం లెక్కిస్తోంది...
+          </p>
+        </div>
+      </div>
+
+      <!-- Quick Action Controls -->
+      <div class="flex flex-wrap items-center gap-2">
+        <button onclick="toggleLanguage()" id="langBtn" class="px-3 py-1.5 text-xs font-semibold rounded-xl border border-slate-300 dark:border-zinc-700 hover:bg-slate-100 dark:hover:bg-zinc-800 transition">
+          🗣️ తెలుగు (Telugu)
+        </button>
+        <button onclick="openModal('memoryModal')" class="px-3 py-1.5 text-xs font-semibold rounded-xl bg-purple-50 text-purple-700 dark:bg-purple-950/60 dark:text-purple-300 border border-purple-200 dark:border-purple-800 hover:bg-purple-100 transition" title="AI జ్ఞాపకశక్తి (Long-term Memory)">
+          🧠 AI మెమరీ
+        </button>
+        <button onclick="openModal('husbandModal')" class="px-3 py-1.5 text-xs font-semibold rounded-xl bg-rose-50 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300 border border-rose-200 dark:border-rose-800 hover:bg-rose-100 transition">
+          💌 భర్త సారాంశం
+        </button>
+        <button onclick="openModal('weeklyReportModal')" class="px-3 py-1.5 text-xs font-semibold rounded-xl bg-indigo-50 text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 hover:bg-indigo-100 transition">
+          📈 వారాంతపు నివేదిక
+        </button>
+        <button onclick="openModal('settingsModal')" class="p-2 text-slate-600 dark:text-zinc-300 rounded-xl hover:bg-slate-100 dark:hover:bg-zinc-800 border border-slate-300 dark:border-zinc-700 transition" title="సెట్టింగులు (Settings)">
+          ⚙️
+        </button>
+      </div>
+    </header>
+
+    <!-- Voice Assistant Interactive Hero Section -->
+    <div class="bg-gradient-to-br from-teal-600 via-teal-700 to-emerald-800 rounded-3xl p-6 text-white shadow-xl relative overflow-hidden flex flex-col items-center text-center">
+      <div class="absolute -right-12 -top-12 w-48 h-48 bg-white/10 rounded-full blur-2xl pointer-events-none"></div>
+      <div class="absolute -left-12 -bottom-12 w-48 h-48 bg-teal-400/20 rounded-full blur-2xl pointer-events-none"></div>
+
+      <!-- Voice Avatar Orb -->
+      <div id="voiceOrb" class="w-24 h-24 rounded-full bg-gradient-to-tr from-cyan-300 via-teal-200 to-white flex items-center justify-center text-3xl shadow-lg mb-3 cursor-pointer transition transform active:scale-95" onclick="toggleVoiceAssistant()">
+        🎙️
+      </div>
+
+      <div class="flex items-center gap-2 mb-1">
+        <span id="voiceStatusBadge" class="inline-block w-2.5 h-2.5 rounded-full bg-emerald-300 animate-ping"></span>
+        <h2 id="voiceStatusText" class="text-sm font-semibold tracking-wide text-teal-100 uppercase">
+          వాయిస్ అసిస్టెంట్ సిద్ధంగా ఉంది (Ready to Speak)
+        </h2>
+      </div>
+
+      <!-- Active Speech Bubble -->
+      <p id="assistantSpeechBubble" class="text-base sm:text-lg font-medium max-w-lg mb-3 text-white/95 px-3 py-1 min-h-[52px] flex items-center justify-center">
+        "నమస్కారం! నేడు మీ ఆరోగ్య దినచర్య ఎలా సాగుతోంది? నేను మీకు ఏ విధంగా సహాయపడగలను?"
+      </p>
+
+      <!-- Live Speech Waveform visualization -->
+      <div id="waveform" class="flex items-center justify-center gap-1.5 h-8 mb-3 hidden">
+        <div class="w-1.5 bg-cyan-200 rounded-full wave-bar"></div>
+        <div class="w-1.5 bg-white rounded-full wave-bar"></div>
+        <div class="w-1.5 bg-emerald-200 rounded-full wave-bar"></div>
+        <div class="w-1.5 bg-teal-100 rounded-full wave-bar"></div>
+        <div class="w-1.5 bg-cyan-200 rounded-full wave-bar"></div>
+      </div>
+
+      <!-- Voice Assistant Specialized Action Buttons -->
+      <div class="flex flex-wrap items-center justify-center gap-2 z-10 w-full max-w-lg">
+        <button id="interruptBtn" onclick="interruptAssistantSpeech()" title="వాయిస్ ఆపండి (Barge-in / Stop)" class="py-2.5 px-3.5 rounded-2xl bg-rose-500/90 hover:bg-rose-600 text-white font-bold text-sm shadow-md transition flex items-center justify-center gap-1.5">
+          <span>⏹️</span> <span>ఆపు (Stop)</span>
+        </button>
+        <button id="voiceToggleBtn"  onclick="toggleVoiceAssistant()" class="py-2.5 px-4 rounded-2xl bg-white text-teal-900 font-bold text-sm shadow-md hover:bg-teal-50 transition flex items-center justify-center gap-2">
+          <span id="voiceBtnIcon">🎤</span> <span id="voiceBtnText">వాయిస్ మాట్లాడండి</span>
+        </button>
+        <button onclick="jarvisSpeakRemainingTime()" class="py-2.5 px-4 rounded-2xl bg-teal-900/60 backdrop-blur hover:bg-teal-900 font-semibold text-sm border border-teal-300/40 transition flex items-center gap-1.5 shadow">
+          ⏰ మిగిలిన సమయం అడగండి
+        </button>
+        <button onclick="triggerPhase2MorningConversation()" class="py-2.5 px-3.5 rounded-2xl bg-emerald-700/60 hover:bg-emerald-700 font-semibold text-sm border border-emerald-300/40 transition">
+          🌅 5-ప్రశ్నల ఉదయపు విచారణ
+        </button>
+        <button onclick="triggerMealCheckQuestion()" class="py-2.5 px-3 rounded-2xl bg-teal-800/60 hover:bg-teal-800 font-semibold text-sm border border-teal-400/40 transition">
+          🍽️ భోజన విచారణ
+        </button>
+      </div>
+
+      <!-- Quick Preset Spoken Query Chips -->
+      <div class="flex flex-wrap items-center justify-center gap-1.5 mt-3 max-w-xl z-10">
+        <span class="text-[11px] text-teal-200 font-medium mr-1">⚡ త్వరిత ప్రశ్నలు:</span>
+        <button onclick="sendInteractiveQuery('how are you')" class="px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-teal-100 text-xs border border-white/10 transition">
+          💬 "నువ్వు ఎలా ఉన్నావు?"
+        </button>
+        <button onclick="sendInteractiveQuery('play music')" class="px-2.5 py-1 rounded-lg bg-teal-500/30 hover:bg-teal-500/50 text-teal-100 text-xs border border-teal-300/30 transition" title="432Hz ప్రశాంత సంగీతం">
+          🎵 "సంగీతం పెట్టు"
+        </button>
+        <button onclick="sendInteractiveQuery('play telugu song')" class="px-2.5 py-1 rounded-lg bg-red-500/30 hover:bg-red-500/50 text-red-100 text-xs border border-red-300/30 transition" title="యూట్యూబ్‌లో తెలుగు పాటలు">
+          ▶️ "తెలుగు పాట పెట్టు (YouTube)"
+        </button>
+        <button onclick="sendInteractiveQuery('stop music')" class="px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-teal-200 text-xs border border-white/10 transition">
+          ⏹️ "సంగీతం ఆపు"
+        </button>
+        <button onclick="sendInteractiveQuery('change language to telugu')" class="px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-teal-100 text-xs border border-white/10 transition">
+          🗣️ "తెలుగులోకి మార్చు"
+        </button>
+        <button onclick="sendInteractiveQuery('change language to english')" class="px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-teal-100 text-xs border border-white/10 transition">
+          🗣️ "Switch to English"
+        </button>
+        <button onclick="sendInteractiveQuery('సమయం ఎంత')" class="px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-teal-100 text-xs border border-white/10 transition">
+          ⏰ "సమయం ఎంత?"
+        </button>
+        <button onclick="sendInteractiveQuery('నేను నీళ్లు తాగాను')" class="px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-teal-100 text-xs border border-white/10 transition">
+          💧 "+1 గ్లాస్ నీరు"
+        </button>
+        <button onclick="sendInteractiveQuery('భోజనం చేశాను')" class="px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-teal-100 text-xs border border-white/10 transition">
+          🥗 "భోజనం చేశాను"
+        </button>
+      </div>
+
+      <!-- Interactive Voice Query Input Box -->
+      <div class="mt-3.5 w-full max-w-lg z-10">
+        <form onsubmit="handleInteractiveVoiceSubmit(event)" class="relative flex items-center">
+          <input type="text" id="interactiveVoiceInput" placeholder="JARVIS ని ఏదైనా అడగండి (ఉదా: how are you, play music, సమయం ఎంత?)..."
+            class="w-full py-2.5 pl-4 pr-24 rounded-2xl bg-white/15 backdrop-blur-md border border-white/30 text-white placeholder-teal-100 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-white/50 transition">
+          <button type="submit" class="absolute right-1.5 px-3 py-1.5 rounded-xl bg-white text-teal-900 font-bold text-xs hover:bg-teal-50 transition shadow-sm">
+            🚀 అడగండి
+          </button>
+        </form>
+      </div>
+
+      <!-- =========================================================================
+           JARVIS UNIVERSAL MUSIC & YOUTUBE ENTERTAINMENT HUB (ALWAYS ON DASHBOARD)
+           ========================================================================= -->
+      <div class="mt-4 w-full max-w-xl z-10 bg-slate-900/90 backdrop-blur-md rounded-2xl p-4 border border-teal-400/30 shadow-2xl text-left">
+        <!-- Hub Header -->
+        <div class="flex items-center justify-between pb-2.5 mb-2.5 border-b border-white/10">
+          <div class="flex items-center gap-2">
+            <span class="text-xl">🎵</span>
+            <div>
+              <h4 class="font-bold text-xs sm:text-sm text-white flex items-center gap-1.5">
+                <span>సంగీత & యూట్యూబ్ కేంద్రం (Music & Video Dashboard)</span>
+                <span id="nowPlayingBadge" class="hidden text-[10px] bg-emerald-500 text-white px-2 py-0.5 rounded-full font-mono animate-pulse">● ప్లే అవుతోంది</span>
+              </h4>
+              <p class="text-[10px] text-teal-200">యూట్యూబ్ పాటలు, సిడ్ శ్రీరామ్ హిట్స్, 432Hz ధ్యానం & లైవ్ సెర్చ్</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <button onclick="toggleAmbientMusic()" id="ambientMusicToggleBtn" class="px-2.5 py-1 rounded-xl bg-teal-600 hover:bg-teal-500 text-white text-[11px] font-semibold transition shadow-sm flex items-center gap-1">
+              🧘 <span>432Hz ధ్వని</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Current Playing Track Info -->
+        <div class="bg-black/50 rounded-xl p-2.5 border border-white/10 flex items-center justify-between mb-3">
+          <div class="truncate mr-2">
+            <div class="text-[10px] text-teal-300 font-medium">ప్రస్తుతం ప్లే అవుతున్నది:</div>
+            <div id="currentSongTitle" class="text-xs text-white font-bold truncate">Sid Sriram - Best of Telugu Melodies & Romantic Hits</div>
+          </div>
+          <div class="flex items-center gap-1">
+            <button onclick="changeToPreviousSong()" class="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white text-xs transition" title="మునుపటి పాట (Previous)">⏮️</button>
+            <button onclick="toggleDashboardPlayback()" id="hubPlayPauseBtn" class="p-1.5 px-2.5 rounded-lg bg-teal-500 hover:bg-teal-400 text-slate-900 font-bold text-xs transition shadow-sm" title="ప్లే / పాజ్">▶️</button>
+            <button onclick="changeToNextSong()" class="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white text-xs transition" title="తదుపరి పాట (Next)">⏭️</button>
+          </div>
+        </div>
+
+        <!-- Embedded YouTube Video Screen with Instant Direct Link -->
+        <div id="youtubePlayerBox" class="w-full aspect-video rounded-xl overflow-hidden border border-teal-500/30 bg-black relative shadow-2xl">
+          <iframe id="youtubeIframe" class="w-full h-full" src="https://www.youtube.com/embed/FGy4m9yaXbQ?autoplay=1&mute=0&enablejsapi=1" title="Telugu Music Player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+        </div>
+
+        <!-- Quick Direct Launch Bar if Browser Blocks Autoplay Inside Embed -->
+        <div class="mt-2 p-2 bg-red-950/40 rounded-xl border border-red-500/30 flex items-center justify-between text-xs">
+          <div class="text-[11px] text-white flex items-center gap-1.5 truncate">
+            <span>📺</span>
+            <span class="truncate">బటన్ క్లిక్ చేసి నేరుగా యూట్యూబ్ ట్యాబ్‌లో వినండి:</span>
+          </div>
+          <button type="button" onclick="launchCurrentSongDirectYouTube()" class="bg-red-600 hover:bg-red-700 text-white font-bold px-3 py-1 rounded-lg text-xs flex items-center gap-1 shadow transition shrink-0">
+            ▶️ యూట్యూబ్‌లో ఓపెన్ చేయండి ↗
+          </button>
+        </div>
+
+        <!-- Manual Song Selector & Category Pills -->
+        <div class="mt-3 space-y-2">
+          <div class="flex items-center justify-between text-[11px] text-teal-200">
+            <span class="font-bold">🎶 పాటను ఎంచుకోండి లేదా మార్చండి (Select / Change Song):</span>
+            <span class="text-[10px] text-slate-400">JARVIS వాయిస్ ద్వారా కూడా మార్చవచ్చు</span>
+          </div>
+
+          <!-- Quick Category Chips -->
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
+            <button onclick="selectSongByIndex(0)" class="py-1 px-2 rounded-lg bg-white/10 hover:bg-white/20 text-white text-[11px] font-medium truncate text-center transition border border-white/5">
+              🌟 సిడ్ శ్రీరామ్ హిట్స్
+            </button>
+            <button onclick="selectSongByIndex(1)" class="py-1 px-2 rounded-lg bg-white/10 hover:bg-white/20 text-white text-[11px] font-medium truncate text-center transition border border-white/5">
+              🎼 AR రెహమాన్ క్లాసిక్స్
+            </button>
+            <button onclick="selectSongByIndex(2)" class="py-1 px-2 rounded-lg bg-white/10 hover:bg-white/20 text-white text-[11px] font-medium truncate text-center transition border border-white/5">
+              🎧 లోఫీ రిలాక్సింగ్
+            </button>
+            <button onclick="selectSongByIndex(3)" class="py-1 px-2 rounded-lg bg-white/10 hover:bg-white/20 text-white text-[11px] font-medium truncate text-center transition border border-white/5">
+              📻 90s ఎవర్ గ్రీన్
+            </button>
+          </div>
+
+          <!-- Custom YouTube Search Input Form -->
+          <form onsubmit="handleManualSongSearch(event)" class="flex gap-1.5 pt-1">
+            <input type="text" id="manualSongSearchInput" placeholder="మీకు నచ్చిన తెలుగు పాట లేదా గాయకుడి పేరు..." 
+              class="flex-1 py-1.5 px-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-slate-400 text-xs focus:outline-none focus:ring-1 focus:ring-teal-400">
+            <button type="submit" class="px-3 py-1.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs flex items-center gap-1 transition shadow-sm">
+              🔍 <span>ప్లే చేయి</span>
+            </button>
+            <button type="button" onclick="openYouTubeSearchExternal()" class="px-2.5 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs transition" title="యూట్యూబ్‌లో చూడండి">
+              ↗️
+            </button>
+          </form>
+        </div>
+      </div>
+
+      <!-- Live Speech Recognition Transcript Box -->
+      <div id="transcriptBox" class="mt-4 w-full max-w-md bg-black/25 backdrop-blur rounded-xl p-3 text-xs text-left text-teal-100 border border-white/10 hidden">
+        <div class="flex items-center justify-between text-teal-300 font-semibold mb-1">
+          <span>👂 విన్న మాటలు (Spoken Input):</span>
+          <span class="text-[10px] text-teal-200">Telugu / English Recognized</span>
+        </div>
+        <div id="transcriptText" class="italic text-white font-medium">వాయిస్ వింటున్నాను... మాట్లాడండి</div>
+      </div>
+    </div>
+
+    <!-- Active Reminder & Next Countdown Card -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+      <!-- Next Reminder Alert -->
+      <div class="md:col-span-2 bg-white dark:bg-zinc-900 p-4 rounded-2xl border border-slate-200 dark:border-zinc-800 shadow-sm flex flex-col justify-between">
+        <div class="flex items-start justify-between">
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="text-xs uppercase font-bold tracking-wider text-rose-500 bg-rose-50 dark:bg-rose-950/50 px-2 py-0.5 rounded-md">
+                తదుపరి రిమైండర్ (Next Activity)
+              </span>
+              <span id="advanceTag" class="text-[11px] font-semibold text-teal-700 dark:text-teal-300 bg-teal-50 dark:bg-teal-950/60 px-2 py-0.5 rounded-md">
+                1-Hr Advance Active
+              </span>
+            </div>
+            <h3 id="nextActivityName" class="text-lg font-bold mt-1 text-slate-800 dark:text-zinc-100">
+              8:00 AM – అల్పాహారం (Breakfast)
+            </h3>
+            <p id="nextActivityDesc" class="text-xs text-slate-500 dark:text-zinc-400 mt-0.5">
+              ఇడ్లీ మరియు సాంబార్ (Monday Special Menu)
+            </p>
+          </div>
+          <div class="text-right">
+            <span class="text-xs text-slate-400">మిగిలిన సమయం (Remaining)</span>
+            <div id="nextCountdown" class="text-2xl font-black text-teal-600 dark:text-teal-400">
+              00:00:00
+            </div>
+            <button onclick="jarvisSpeakRemainingTime()" class="text-[11px] text-teal-600 dark:text-teal-400 font-semibold hover:underline mt-0.5 inline-flex items-center gap-1">
+              🔊 సమయం చెప్పించు
+            </button>
+          </div>
+        </div>
+
+        <div class="mt-4 pt-3 border-t border-slate-100 dark:border-zinc-800 flex items-center justify-between text-xs">
+          <div class="flex flex-wrap gap-2">
+            <button onclick="markCurrentActivityDone()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-3 py-1.5 rounded-xl transition flex items-center gap-1 shadow-sm">
+              ✓ పూర్తయింది (Done)
+            </button>
+            <button onclick="snoozeCurrentReminder(30)" class="bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 text-slate-700 dark:text-zinc-300 font-medium px-3 py-1.5 rounded-xl transition">
+              30m స్నూజ్
+            </button>
+            <button onclick="triggerSuggestAlternativeMeal()" class="bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800 font-semibold px-3 py-1.5 rounded-xl hover:bg-purple-100 transition">
+              🔄 ఇష్టం లేదు (మరొక ఆహారం)
+            </button>
+          </div>
+          <button onclick="openModal('scheduleModal')" class="text-teal-600 dark:text-teal-400 hover:underline font-semibold">
+            పూర్తి టైమ్‌టేబుల్ 📅
+          </button>
+        </div>
+      </div>
+
+      <!-- Smart Hydration Card -->
+      <div class="bg-white dark:bg-zinc-900 p-4 rounded-2xl border border-slate-200 dark:border-zinc-800 shadow-sm flex flex-col justify-between">
+        <div>
+          <div class="flex items-center justify-between">
+            <span class="text-xs uppercase font-bold tracking-wider text-sky-600 bg-sky-50 dark:bg-sky-950/50 px-2 py-0.5 rounded-md">
+              స్మార్ట్ హైడ్రేషన్ (Hydration)
+            </span>
+            <span id="waterGlassesRatio" class="text-sm font-bold text-sky-600">6 / 10 గ్లాసులు</span>
+          </div>
+
+          <div class="w-full bg-slate-100 dark:bg-zinc-800 h-3 rounded-full mt-3 overflow-hidden">
+            <div id="waterProgressBar" class="bg-sky-500 h-full rounded-full transition-all duration-300" style="width: 60%"></div>
+          </div>
+          <p class="text-xs text-slate-500 dark:text-zinc-400 mt-2">
+            నిర్ధారించిన నీరు మాత్రమే నమోదవుతుంది. నిద్ర సమయంలో రిమైండర్లు నిలిపివేయబడతాయి.
+          </p>
+        </div>
+
+        <div class="flex items-center gap-2 mt-3 pt-2">
+          <button onclick="addWaterGlass(1)" class="flex-1 bg-sky-500 hover:bg-sky-600 text-white font-bold py-1.5 px-3 rounded-xl text-xs flex items-center justify-center gap-1 shadow transition">
+            💧 +1 గ్లాస్ తాగాను
+          </button>
+          <button onclick="addWaterGlass(-1)" class="bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 text-slate-600 dark:text-zinc-400 py-1.5 px-2.5 rounded-xl text-xs transition" title="తగ్గించు">
+            -
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 7-Day Vegetarian Meal Plan Rotating Card -->
+    <div class="bg-white dark:bg-zinc-900 p-5 rounded-2xl border border-slate-200 dark:border-zinc-800 shadow-sm">
+      <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+        <div>
+          <h3 class="text-base font-bold text-slate-800 dark:text-zinc-100 flex items-center gap-2">
+            🥗 వారపు శాకాహార మెనూ (7-Day Vegetarian Rotation)
+          </h3>
+          <p class="text-xs text-slate-500 dark:text-zinc-400">సోమవారం నుండి ఆదివారం వరకు సంపూర్ణ పౌష్టికాహార ప్రణాళిక</p>
+        </div>
+        <!-- Day Selector Pill Tabs -->
+        <div class="flex gap-1 overflow-x-auto pb-1" id="dayTabs">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+
+      <!-- Current Day Selected Menu Details -->
+      <div id="selectedMenuContainer" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs mt-3">
+        <!-- Breakfast -->
+        <div class="p-3 rounded-xl bg-amber-50/70 dark:bg-amber-950/20 border border-amber-200/60 dark:border-amber-900/40">
+          <div class="flex items-center justify-between font-bold text-amber-800 dark:text-amber-400 mb-1">
+            <span>🌅 అల్పాహారం (Breakfast)</span>
+            <span id="badge-breakfast" class="text-[10px] bg-amber-200 dark:bg-amber-800 px-1.5 py-0.5 rounded">8:00 AM</span>
+          </div>
+          <p id="menu-breakfast" class="text-slate-700 dark:text-zinc-200 font-medium">ఇడ్లీ మరియు సాంబార్</p>
+          <div class="mt-2 flex items-center justify-between text-[11px]">
+            <button onclick="toggleMealState('breakfast')" id="btn-status-breakfast" class="text-emerald-700 dark:text-emerald-400 font-semibold hover:underline">
+              ✓ తిన్నారా? నమోదు
+            </button>
+            <button onclick="markMealDislike('breakfast')" class="text-slate-400 hover:text-rose-500 text-[10px]" title="ఇష్టం లేని వస్తువుగా గుర్తుంచుకో">
+              👎
+            </button>
+          </div>
+        </div>
+
+        <!-- Lunch -->
+        <div class="p-3 rounded-xl bg-emerald-50/70 dark:bg-emerald-950/20 border border-emerald-200/60 dark:border-emerald-900/40">
+          <div class="flex items-center justify-between font-bold text-emerald-800 dark:text-emerald-400 mb-1">
+            <span>☀️ మధ్యాహ్న భోజనం (Lunch)</span>
+            <span id="badge-lunch" class="text-[10px] bg-emerald-200 dark:bg-emerald-800 px-1.5 py-0.5 rounded">1:00 PM</span>
+          </div>
+          <p id="menu-lunch" class="text-slate-700 dark:text-zinc-200 font-medium">అన్నం, పాలకూర పప్పు, క్యారెట్ కూర మరియు పెరుగు</p>
+          <div class="mt-2 flex items-center justify-between text-[11px]">
+            <button onclick="toggleMealState('lunch')" id="btn-status-lunch" class="text-emerald-700 dark:text-emerald-400 font-semibold hover:underline">
+              ✓ తిన్నారా? నమోదు
+            </button>
+            <button onclick="markMealDislike('lunch')" class="text-slate-400 hover:text-rose-500 text-[10px]" title="ఇష్టం లేని వస్తువుగా గుర్తుంచుకో">
+              👎
+            </button>
+          </div>
+        </div>
+
+        <!-- Snack -->
+        <div class="p-3 rounded-xl bg-orange-50/70 dark:bg-orange-950/20 border border-orange-200/60 dark:border-orange-900/40">
+          <div class="flex items-center justify-between font-bold text-orange-800 dark:text-orange-400 mb-1">
+            <span>🍎 సాయంత్రం స్నాక్ (Snack)</span>
+            <span id="badge-snack" class="text-[10px] bg-orange-200 dark:bg-orange-800 px-1.5 py-0.5 rounded">5:00 PM</span>
+          </div>
+          <p id="menu-snack" class="text-slate-700 dark:text-zinc-200 font-medium">దానిమ్మ గింజలు మరియు బాదం పప్పులు</p>
+          <div class="mt-2 flex items-center justify-between text-[11px]">
+            <button onclick="toggleMealState('snack')" id="btn-status-snack" class="text-emerald-700 dark:text-emerald-400 font-semibold hover:underline">
+              ✓ తిన్నారా? నమోదు
+            </button>
+            <button onclick="markMealDislike('snack')" class="text-slate-400 hover:text-rose-500 text-[10px]" title="ఇష్టం లేని వస్తువుగా గుర్తుంచుకో">
+              👎
+            </button>
+          </div>
+        </div>
+
+        <!-- Dinner -->
+        <div class="p-3 rounded-xl bg-indigo-50/70 dark:bg-indigo-950/20 border border-indigo-200/60 dark:border-indigo-900/40">
+          <div class="flex items-center justify-between font-bold text-indigo-800 dark:text-indigo-400 mb-1">
+            <span>🌙 రాత్రి భోజనం (Dinner)</span>
+            <span id="badge-dinner" class="text-[10px] bg-indigo-200 dark:bg-indigo-800 px-1.5 py-0.5 rounded">8:00 PM</span>
+          </div>
+          <p id="menu-dinner" class="text-slate-700 dark:text-zinc-200 font-medium">చపాతీ మరియు పనీర్ కూర</p>
+          <div class="mt-2 flex items-center justify-between text-[11px]">
+            <button onclick="toggleMealState('dinner')" id="btn-status-dinner" class="text-emerald-700 dark:text-emerald-400 font-semibold hover:underline">
+              ✓ తిన్నారా? నమోదు
+            </button>
+            <button onclick="markMealDislike('dinner')" class="text-slate-400 hover:text-rose-500 text-[10px]" title="ఇష్టం లేని వస్తువుగా గుర్తుంచుకో">
+              👎
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Daily Progress & Confirmed Routine Checklist -->
+    <div class="bg-white dark:bg-zinc-900 p-5 rounded-2xl border border-slate-200 dark:border-zinc-800 shadow-sm">
+      <div class="flex items-center justify-between mb-4">
+        <div>
+          <h3 class="text-base font-bold text-slate-800 dark:text-zinc-100">
+            📋 నిర్ధారించిన దినచర్య పరిశీలన (Confirmed Checklist)
+          </h3>
+          <p class="text-xs text-slate-500 dark:text-zinc-400">నిర్ధారించిన అంశాలు మాత్రమే లెక్కించబడతాయి (Never auto-completed)</p>
+        </div>
+        <div class="text-right">
+          <span id="completedRatioBadge" class="text-xs font-bold bg-teal-100 text-teal-800 dark:bg-teal-900/60 dark:text-teal-300 px-2.5 py-1 rounded-full">
+            0% పూర్తయింది
+          </span>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5" id="checklistContainer">
+        <!-- Dynamically populated items -->
+      </div>
+    </div>
+
+    <!-- Comprehensive Indian Standard Time (IST UTC+05:30) 24-Hour Schedule & Data Monitoring Table -->
+    <div class="bg-white dark:bg-zinc-900 rounded-3xl p-5 shadow-sm border border-slate-200 dark:border-zinc-800">
+      <div class="flex flex-wrap items-center justify-between pb-3 mb-3 border-b border-slate-100 dark:border-zinc-800 gap-2">
+        <div class="flex items-center gap-2">
+          <span class="text-xl">🇮🇳</span>
+          <div>
+            <h3 class="font-bold text-sm text-slate-800 dark:text-zinc-100">సమగ్ర డేటా పర్యవేక్షణ & 24 గంటల టైమ్‌టేబుల్ పట్టిక</h3>
+            <p class="text-[11px] text-slate-500 dark:text-zinc-400">భారత కాలమానం (Indian Standard Time UTC+05:30) ప్రకారం పూర్తి రోజువారీ పరిశీలన</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <button onclick="testCurrentScheduledVoiceReminder()" class="text-xs bg-teal-50 dark:bg-teal-950/60 text-teal-700 dark:text-teal-300 border border-teal-200 dark:border-teal-800 px-3 py-1.5 rounded-xl font-semibold hover:bg-teal-100 transition flex items-center gap-1 shadow-sm" title="వాయిస్ రిమైండర్ వినిపించు">
+            🔊 ప్రస్తుత షెడ్యూల్ వాయిస్ వినండి
+          </button>
+          <span class="text-xs bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 px-2.5 py-1 rounded-xl font-mono font-medium">
+            20 ఈవెంట్లు / రోజు
+          </span>
+        </div>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-xs">
+          <thead class="bg-slate-50 dark:bg-zinc-800/80 text-slate-700 dark:text-zinc-300 border-b border-slate-200 dark:border-zinc-800 font-semibold">
+            <tr>
+              <th class="py-2.5 px-3">సమయం (IST)</th>
+              <th class="py-2.5 px-3">కార్యక్రమం / ఆహారం</th>
+              <th class="py-2.5 px-3">నేటి ప్రణాళిక వివరాలు</th>
+              <th class="py-2.5 px-3 text-center">స్థితి (Status)</th>
+              <th class="py-2.5 px-3 text-center">త్వరిత చర్య (Action)</th>
+            </tr>
+          </thead>
+          <tbody id="istScheduleTableBody" class="divide-y divide-slate-100 dark:divide-zinc-800">
+            <!-- Populated dynamically by renderISTMonitoringTable() -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Phase 2 Smart Adaptation & Voice Inquiry Panel -->
+    <div class="bg-slate-100 dark:bg-zinc-850 p-4 rounded-2xl border border-slate-200 dark:border-zinc-800 text-xs">
+      <div class="font-bold text-slate-700 dark:text-zinc-300 mb-2 flex items-center justify-between">
+        <span>🤖 AI అడాప్టివ్ వాయిస్ ప్రతిస్పందనలు (Smart Adaptations):</span>
+        <span class="text-[11px] text-teal-600 dark:text-teal-400 font-normal">గమనించిన అలవాట్లను బట్టి సమయ మార్పులను సిఫార్సు చేస్తుంది</span>
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 text-slate-600 dark:text-zinc-300">
+        <button onclick="handleSmartVoiceOption('not_hungry_8am')" class="p-2.5 bg-white dark:bg-zinc-800 rounded-xl border border-slate-200 dark:border-zinc-700 text-left hover:border-teal-500 transition">
+          1. <strong>"8 గంటలకు ఆకలి లేదు"</strong><br>
+          <span class="text-amber-600 font-medium">సిఫార్సు: 8:30 కి మార్చమంటారా అని అడుగుతుంది</span>
+        </button>
+        <button onclick="handleSmartVoiceOption('dislike_food')" class="p-2.5 bg-white dark:bg-zinc-800 rounded-xl border border-slate-200 dark:border-zinc-700 text-left hover:border-teal-500 transition">
+          2. <strong>"ఈ ఆహారం నాకు ఇష్టం లేదు"</strong><br>
+          <span class="text-purple-600 font-medium">సిఫార్సు: సురక్షిత ప్రత్యామ్నాయ శాకాహారం సూచిస్తుంది</span>
+        </button>
+        <button onclick="handleSmartVoiceOption('tired_rest')" class="p-2.5 bg-white dark:bg-zinc-800 rounded-xl border border-slate-200 dark:border-zinc-700 text-left hover:border-teal-500 transition">
+          3. <strong>"చాలా అలసటగా ఉంది"</strong><br>
+          <span class="text-rose-600 font-medium">సిఫార్సు: ఒత్తిడి లేకుండా విశ్రాంతికి సమయం ఇస్తుంది</span>
+        </button>
+        <button onclick="handleSmartVoiceOption('already_drank_water')" class="p-2.5 bg-white dark:bg-zinc-800 rounded-xl border border-slate-200 dark:border-zinc-700 text-left hover:border-teal-500 transition">
+          4. <strong>"ఇప్పుడే నీళ్లు తాగాను"</strong><br>
+          <span class="text-sky-600 font-medium">సిఫార్సు: నీరు నమోదు చేసి మళ్లీ గుర్తుచేయదు</span>
+        </button>
+        <button onclick="handleSmartVoiceOption('snooze30')" class="p-2.5 bg-white dark:bg-zinc-800 rounded-xl border border-slate-200 dark:border-zinc-700 text-left hover:border-teal-500 transition">
+          5. <strong>"30 నిమిషాల తర్వాత గుర్తుచేయి"</strong><br>
+          <span class="text-indigo-600 font-medium">సిఫార్సు: 30 నిమిషాల ఖచ్చితమైన స్నూజ్</span>
+        </button>
+        <button onclick="openModal('husbandModal')" class="p-2.5 bg-rose-50 dark:bg-rose-950/40 rounded-xl border border-rose-200 dark:border-rose-800 text-left hover:bg-rose-100 transition flex items-center justify-center font-bold text-rose-800 dark:text-rose-300">
+          💌 భర్తతో దినచర్య పంచుకోండి
+        </button>
+      </div>
+    </div>
+
+    <!-- Integrations & Technical Report Footer -->
+    <div class="p-4 bg-white dark:bg-zinc-900 rounded-2xl border border-slate-200 dark:border-zinc-800 text-xs flex flex-wrap items-center justify-between gap-3 text-slate-500 dark:text-zinc-400">
+      <div class="flex flex-wrap items-center gap-4">
+        <span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-emerald-500"></span> AI Memory: <strong class="text-slate-700 dark:text-zinc-200">Active (Separate Tables)</strong></span>
+        <span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-emerald-500"></span> 1-Hr Advance Reminders: <strong class="text-slate-700 dark:text-zinc-200">Enabled</strong></span>
+        <span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-emerald-500"></span> Consent-Based Sharing: <strong class="text-slate-700 dark:text-zinc-200">Secured</strong></span>
+        <span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-emerald-500"></span> Timezone: <strong class="text-slate-700 dark:text-zinc-200">Asia/Kolkata (IST)</strong></span>
+      </div>
+      <div>
+        <button onclick="openModal('reportModal')" class="text-teal-600 dark:text-teal-400 font-semibold hover:underline">
+          నేటి పూర్తి 9:00 PM నివేదిక 📊
+        </button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- MODALS -->
+
+  <!-- 1. AI Memory & Long-term Preferences Modal -->
+  <div id="memoryModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-3">
+    <div class="bg-white dark:bg-zinc-900 rounded-3xl max-w-lg w-full p-5 max-h-[85vh] flex flex-col shadow-2xl border border-slate-200 dark:border-zinc-800">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-zinc-800">
+        <div class="flex items-center gap-2">
+          <span class="text-xl">🧠</span>
+          <h3 class="font-bold text-base text-slate-800 dark:text-zinc-100">AI జ్ఞాపకశక్తి (Long-term AI Memory)</h3>
+        </div>
+        <button onclick="closeModal('memoryModal')" class="text-slate-400 hover:text-slate-600 dark:hover:text-zinc-200 text-lg">✕</button>
+      </div>
+      <div class="overflow-y-auto flex-1 py-3 text-xs space-y-3">
+        <p class="text-slate-500 dark:text-zinc-400">
+          వినియోగదారు అనుమతితో JARVIS గుర్తుంచుకున్న వ్యక్తిగత ప్రాధాన్యతలు (రోజువారీ రికార్డులకు ప్రత్యేకంగా భద్రపరచబడతాయి):
+        </p>
+
+        <div>
+          <label class="block font-semibold mb-1">ఇష్టమైన శాకాహార వంటకాలు (Favourite Foods):</label>
+          <input type="text" id="memFavourites" value="ఇడ్లీ, పెసరట్టు, దానిమ్మ, కొబ్బరినీళ్లు" class="w-full p-2 rounded-xl border border-slate-300 dark:border-zinc-700 bg-slate-50 dark:bg-zinc-800">
+        </div>
+
+        <div>
+          <label class="block font-semibold mb-1">ఇష్టం లేని వస్తువులు (Disliked Foods):</label>
+          <input type="text" id="memDislikes" value="తీవ్రమైన మసాలాలు, మితిమీరిన తీపి" class="w-full p-2 rounded-xl border border-slate-300 dark:border-zinc-700 bg-slate-50 dark:bg-zinc-800">
+        </div>
+
+        <div>
+          <label class="block font-semibold mb-1">అలెర్జీలు / పడని పదార్థాలు (Allergies):</label>
+          <input type="text" id="memAllergies" value="ఏమీ లేవు (None reported)" class="w-full p-2 rounded-xl border border-slate-300 dark:border-zinc-700 bg-slate-50 dark:bg-zinc-800">
+        </div>
+
+        <div>
+          <label class="block font-semibold mb-1">వైద్యులు ఆమోదించిన ఆహార నియమాలు (Doctor Diet Instructions):</label>
+          <input type="text" id="memDoctorDiet" value="రోజూ 2.5L నీరు, తాజా ఆకుకూరలు, కాల్షియం & ఐరన్" class="w-full p-2 rounded-xl border border-slate-300 dark:border-zinc-700 bg-slate-50 dark:bg-zinc-800">
+        </div>
+
+        <div>
+          <label class="block font-semibold mb-1">అసౌకర్యం కలిగించిన ఆహారాలు (Reported Discomfort Foods):</label>
+          <input type="text" id="memDiscomfort" value="రాత్రి వేళల్లో వేపుళ్లు" class="w-full p-2 rounded-xl border border-slate-300 dark:border-zinc-700 bg-slate-50 dark:bg-zinc-800">
+        </div>
+
+        <div class="p-3 bg-purple-50 dark:bg-purple-950/40 rounded-xl border border-purple-200 dark:border-purple-800 text-purple-900 dark:text-purple-300">
+          💡 <em>AI అభ్యాస ప్రక్రియ:</em> మీరు ఇచ్చిన అనుమతితో ఈ ప్రాధాన్యతలను బట్టి JARVIS మెనూ ఎంపికలు మరియు భోజన సమయాలను అనుకూలంగా మార్చుకుంటుంది.
+        </div>
+      </div>
+      <div class="pt-3 border-t border-slate-200 dark:border-zinc-800 flex justify-end gap-2">
+        <button onclick="saveAIMemory()" class="bg-purple-600 hover:bg-purple-700 text-white font-semibold px-4 py-2 rounded-xl text-xs">
+          మెమరీని భద్రపరుచు (Save Memory)
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. Husband's Daily Summary Modal -->
+  <div id="husbandModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-3">
+    <div class="bg-white dark:bg-zinc-900 rounded-3xl max-w-md w-full p-5 shadow-2xl border border-slate-200 dark:border-zinc-800">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-zinc-800">
+        <h3 class="font-bold text-base text-slate-800 dark:text-zinc-100">💌 భర్తకు దినచర్య సారాంశం (Husband Summary)</h3>
+        <button onclick="closeModal('husbandModal')" class="text-slate-400 hover:text-slate-600 text-lg">✕</button>
+      </div>
+      <div class="py-3 text-xs space-y-3">
+        <!-- Explicit Consent Switch -->
+        <div class="p-3 bg-rose-50 dark:bg-rose-950/40 rounded-xl border border-rose-200 dark:border-rose-900 flex items-center justify-between">
+          <div>
+            <div class="font-bold text-rose-900 dark:text-rose-200">భార్య అనుమతి (Wife's Explicit Consent):</div>
+            <div class="text-[11px] text-rose-700 dark:text-rose-300">దినచర్య పురోగతిని పంచుకోవడానికి అనుమతిస్తున్నారా?</div>
+          </div>
+          <input type="checkbox" id="husbandConsentToggle" checked onchange="toggleHusbandConsent()" class="w-5 h-5 accent-rose-600 cursor-pointer">
+        </div>
+
+        <div id="husbandSummaryPreview" class="p-3 bg-slate-50 dark:bg-zinc-800 rounded-xl border border-slate-200 dark:border-zinc-700 font-mono text-[11px] space-y-1">
+          <!-- Populated by JS -->
+        </div>
+
+        <div class="text-[11px] text-slate-500 dark:text-zinc-400">
+          🔒 వ్యక్తిగత సంభాషణలు లేదా రహస్య వైద్య వివరాలు పంచుకోబడవు. కేవలం నిర్ధారించిన ఆహారం & నీటి రికార్డు మాత్రమే షేర్ చేయబడుతుంది.
+        </div>
+      </div>
+      <div class="pt-3 border-t border-slate-200 dark:border-zinc-800 flex justify-end gap-2">
+        <button onclick="copyHusbandSummary()" class="bg-rose-600 hover:bg-rose-700 text-white font-semibold px-4 py-2 rounded-xl text-xs">
+          📋 కాపీ & పంపండి (Copy Summary)
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. Sunday Weekly AI Learning Report Modal -->
+  <div id="weeklyReportModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-3">
+    <div class="bg-white dark:bg-zinc-900 rounded-3xl max-w-lg w-full p-5 max-h-[85vh] flex flex-col shadow-2xl border border-slate-200 dark:border-zinc-800">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-zinc-800">
+        <h3 class="font-bold text-base text-slate-800 dark:text-zinc-100">📈 వారాంతపు AI అభ్యాస నివేదిక (Weekly Report)</h3>
+        <button onclick="closeModal('weeklyReportModal')" class="text-slate-400 hover:text-slate-600 text-lg">✕</button>
+      </div>
+      <div class="overflow-y-auto flex-1 py-3 text-xs space-y-3" id="weeklyReportContent">
+        <!-- Populated by JS -->
+      </div>
+      <div class="pt-3 border-t border-slate-200 dark:border-zinc-800 flex justify-end gap-2">
+        <button onclick="closeModal('weeklyReportModal')" class="bg-slate-200 dark:bg-zinc-800 text-slate-800 dark:text-zinc-200 font-semibold px-4 py-2 rounded-xl text-xs">
+          ముగించు (Close)
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. Today's 9 PM Daily Report Modal -->
+  <div id="reportModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-3">
+    <div class="bg-white dark:bg-zinc-900 rounded-3xl max-w-lg w-full p-5 shadow-2xl border border-slate-200 dark:border-zinc-800">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-zinc-800">
+        <h3 class="font-bold text-base text-slate-800 dark:text-zinc-100">📊 నేటి 9:00 PM AI నివేదిక (Daily Report)</h3>
+        <button onclick="closeModal('reportModal')" class="text-slate-400 hover:text-slate-600 text-lg">✕</button>
+      </div>
+      <div class="py-4 text-xs space-y-3" id="reportContent">
+        <!-- Populated by JS -->
+      </div>
+      <div class="pt-3 border-t border-slate-200 dark:border-zinc-800 flex justify-end gap-2">
+        <button onclick="copyTodayReport()" class="bg-teal-600 hover:bg-teal-700 text-white font-semibold px-4 py-2 rounded-xl text-xs">
+          📋 కాపీ చేయండి (Copy)
+        </button>
+        <button onclick="closeModal('reportModal')" class="bg-slate-200 dark:bg-zinc-800 text-slate-800 dark:text-zinc-200 font-semibold px-4 py-2 rounded-xl text-xs">
+          ముగించు (Close)
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 5. Schedule Timetable Modal -->
+  <div id="scheduleModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-3">
+    <div class="bg-white dark:bg-zinc-900 rounded-3xl max-w-xl w-full p-5 max-h-[85vh] flex flex-col shadow-2xl border border-slate-200 dark:border-zinc-800">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-zinc-800">
+        <h3 class="font-bold text-base text-slate-800 dark:text-zinc-100">📅 పూర్తి దినచర్య కాలపట్టిక (24-Hour Schedule)</h3>
+        <button onclick="closeModal('scheduleModal')" class="text-slate-400 hover:text-slate-600 dark:hover:text-zinc-200 text-lg">✕</button>
+      </div>
+      <div class="overflow-y-auto flex-1 py-3 text-xs divide-y divide-slate-100 dark:divide-zinc-800" id="scheduleListContainer">
+        <!-- Populated by JS -->
+      </div>
+      <div class="pt-3 border-t border-slate-200 dark:border-zinc-800 flex justify-end">
+        <button onclick="closeModal('scheduleModal')" class="bg-slate-200 dark:bg-zinc-800 text-slate-800 dark:text-zinc-200 font-semibold px-4 py-2 rounded-xl text-xs">మూసివేయి (Close)</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 6. Settings Modal -->
+  <div id="settingsModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-3">
+    <div class="bg-white dark:bg-zinc-900 rounded-3xl max-w-md w-full p-5 shadow-2xl border border-slate-200 dark:border-zinc-800">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-zinc-800">
+        <h3 class="font-bold text-base text-slate-800 dark:text-zinc-100">⚙️ అసిస్టెంట్ సెట్టింగులు (Settings)</h3>
+        <button onclick="closeModal('settingsModal')" class="text-slate-400 hover:text-slate-600 text-lg">✕</button>
+      </div>
+      <div class="py-3 text-xs space-y-3">
+        <div>
+          <label class="block font-semibold mb-1">ప్రాథమిక భాష (Default Language):</label>
+          <select id="settingLanguage" class="w-full p-2 rounded-xl border border-slate-300 dark:border-zinc-700 bg-slate-50 dark:bg-zinc-800">
+            <option value="te-IN">తెలుగు (Telugu - Default)</option>
+            <option value="en-IN">English (India)</option>
+          </select>
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block font-semibold mb-1">మేల్కొనే సమయం (Wake-up):</label>
+            <input type="time" id="settingWakeup" value="06:30" class="w-full p-2 rounded-xl border border-slate-300 dark:border-zinc-700 bg-slate-50 dark:bg-zinc-800">
+          </div>
+          <div>
+            <label class="block font-semibold mb-1">నిద్ర సమయం (Sleep):</label>
+            <input type="time" id="settingSleep" value="22:00" class="w-full p-2 rounded-xl border border-slate-300 dark:border-zinc-700 bg-slate-50 dark:bg-zinc-800">
+          </div>
+        </div>
+        <div class="flex items-center justify-between p-2.5 bg-slate-50 dark:bg-zinc-800 rounded-xl">
+          <span>1 గంట ముందస్తు భోజన రిమైండర్లు:</span>
+          <input type="checkbox" id="settingAdvanceReminder" checked class="w-4 h-4 accent-teal-600">
+        </div>
+        <div>
+          <label class="block font-semibold mb-1">సూచించిన మందుల వివరాలు (Prescribed Medicine):</label>
+          <input type="text" id="settingMedicine" value="Folic Acid & Multivitamins" class="w-full p-2 rounded-xl border border-slate-300 dark:border-zinc-700 bg-slate-50 dark:bg-zinc-800">
+        </div>
+        <div>
+          <label class="block font-semibold mb-1">అత్యవసర ఫోన్ నంబర్ (Doctor / Hospital Contact):</label>
+          <input type="tel" id="settingEmergencyContact" value="108" class="w-full p-2 rounded-xl border border-slate-300 dark:border-zinc-700 bg-slate-50 dark:bg-zinc-800">
+        </div>
+      </div>
+      <div class="pt-3 border-t border-slate-200 dark:border-zinc-800 flex justify-end gap-2">
+        <button onclick="saveUserSettings()" class="bg-teal-600 hover:bg-teal-700 text-white font-semibold px-4 py-2 rounded-xl text-xs">
+          భద్రపరుచు (Save Settings)
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 7. Emergency Medical Warning Modal -->
+  <div id="emergencyModal" class="fixed inset-0 bg-red-950/80 backdrop-blur-md z-50 hidden flex items-center justify-center p-3">
+    <div class="bg-white dark:bg-zinc-900 rounded-3xl max-w-md w-full p-6 shadow-2xl border-2 border-red-500">
+      <div class="text-center mb-3">
+        <div class="w-14 h-14 bg-red-100 text-red-600 rounded-full flex items-center justify-center text-3xl mx-auto mb-2">
+          🚨
+        </div>
+        <h3 class="font-bold text-lg text-red-600">అత్యవసర వైద్య హెచ్చరిక (Emergency)</h3>
+        <p class="text-xs text-slate-600 dark:text-zinc-400 mt-1">క్రింది లక్షణాలు కనిపిస్తే వెంటనే వైద్యుడిని లేదా 108 ను సంప్రదించండి:</p>
+      </div>
+
+      <ul class="text-xs space-y-2 bg-red-50 dark:bg-red-950/40 p-3 rounded-xl border border-red-200 dark:border-red-900 text-red-900 dark:text-red-200">
+        <li>• రక్తస్రావం (Any Bleeding or spotting)</li>
+        <li>• తీవ్రమైన కడుపు నొప్పి (Severe abdominal pain or cramping)</li>
+        <li>• స్పృహ తప్పడం లేదా తీవ్రమైన తలతిరుగుడు (Fainting / severe dizziness)</li>
+        <li>• ద్రవాలు కూడా తాగలేకపోవడం, తీవ్రమైన వాంతులు (Inability to keep liquids down)</li>
+        <li>• శిశువు కదలికలు తగ్గడం (Decreased fetal movement)</li>
+      </ul>
+
+      <div class="mt-4 flex flex-col gap-2">
+        <a id="emergencyCallBtn" href="tel:108" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded-xl text-center text-sm shadow transition">
+          📞 అత్యవసర కాల్ చేయండి (Call 108)
+        </a>
+        <button onclick="closeModal('emergencyModal')" class="w-full bg-slate-200 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 font-semibold py-2 rounded-xl text-xs">
+          వెనుకకు (Dismiss)
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    
+    // IST Timezone Math Helper
+    function getISTNow() {
+      const d = new Date();
+      const istString = d.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' });
+      return new Date(istString);
+    }
+
+    // Non-blocking Toast Notification Helper
+    function showToast(msg) {
+      let toast = document.getElementById('jarvisToast');
+      if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'jarvisToast';
+        toast.className = 'fixed bottom-5 right-5 z-50 bg-teal-900 text-white px-4 py-2.5 rounded-2xl shadow-2xl text-xs font-semibold flex items-center gap-2 border border-teal-400 transition transform duration-300 translate-y-12 opacity-0 pointer-events-none';
+        document.body.appendChild(toast);
+      }
+      toast.innerHTML = `✨ <span>${msg}</span>`;
+      toast.classList.remove('translate-y-12', 'opacity-0');
+      clearTimeout(toast._timer);
+      toast._timer = setTimeout(() => {
+        toast.classList.add('translate-y-12', 'opacity-0');
+      }, 3500);
+    }
+
+    /* =========================================================================
+       JARVIS PREGNANCY CARE AI COMPANION - PHASE 2 (LEARNING & ADVANCED AUTOMATION)
+       ========================================================================= */
+
+    // 1. Weekly Vegetarian Menu Plan
+    const WEEKLY_MENU = {
+      1: {
+        name: "సోమవారం (Monday)",
+        breakfast: "ఇడ్లీ మరియు సాంబార్ (Idli and sambar)",
+        lunch: "అన్నం, పాలకూర పప్పు, క్యారెట్ కూర మరియు పెరుగు (Rice, spinach dal, carrot curry and curd)",
+        snack: "దానిమ్మ గింజలు మరియు బాదం పప్పులు (Pomegranate and almonds)",
+        dinner: "చపాతీ మరియు పనీర్ కూర (Chapati and paneer curry)"
+      },
+      2: {
+        name: "మంగళవారం (Tuesday)",
+        breakfast: "రాగి జావ మరియు పెసరట్టు (Ragi porridge and pesarattu)",
+        lunch: "అన్నం, శనగల కూర, కూరగాయలు మరియు పెరుగు (Rice, chickpea curry, vegetables and curd)",
+        snack: "జామపండు మరియు కొబ్బరి నీళ్లు (Guava and coconut water)",
+        dinner: "పెసరపప్పు కిచిడీ (Moong dal khichdi)"
+      },
+      3: {
+        name: "బుధవారం (Wednesday)",
+        breakfast: "కూరగాయల ఓట్స్ మరియు పాలు (Vegetable oats and milk)",
+        lunch: "అన్నం, టమాటా పప్పు మరియు కూరగాయలు (Rice, tomato dal and vegetables)",
+        snack: "అరటిపండు మరియు అక్రూట్లు (Banana and walnuts)",
+        dinner: "చపాతీ, పెసరపప్పు మరియు బీట్‌రూట్ కూర (Chapati, moong dal and beetroot)"
+      },
+      4: {
+        name: "గురువారం (Thursday)",
+        breakfast: "దోశ మరియు సాంబార్ (Dosa and sambar)",
+        lunch: "అన్నం, రాజ్‌మా, క్యాబేజీ కూర మరియు పెరుగు (Rice, rajma, cabbage and curd)",
+        snack: "బత్తాయి పండు మరియు వేయించిన శనగలు (Orange and roasted chana)",
+        dinner: "కూరగాయల ఉప్మా మరియు పెరుగు (Vegetable upma and curd)"
+      },
+      5: {
+        name: "శుక్రవారం (Friday)",
+        breakfast: "రాగి ఇడ్లీ మరియు సాంబార్ (Ragi idli and sambar)",
+        lunch: "అన్నం, కందిపప్పు మరియు ఆకుకూరలు (Rice, toor dal and leafy vegetables)",
+        snack: "యాపిల్ మరియు బాదం పప్పులు (Apple and almonds)",
+        dinner: "పనీర్ వెజిటబుల్ పులావ్ (Paneer vegetable pulao)"
+      },
+      6: {
+        name: "శనివారం (Saturday)",
+        breakfast: "కూరగాయల పోహా మరియు పాలు (Vegetable poha and milk)",
+        lunch: "అన్నం, శనగల కూర మరియు కూరగాయలు (Rice, chickpea curry and vegetables)",
+        snack: "దానిమ్మ గింజలు మరియు కొబ్బరి నీళ్లు (Pomegranate and coconut water)",
+        dinner: "కూరగాయల కిచిడీ (Vegetable khichdi)"
+      },
+      0: {
+        name: "ఆదివారం (Sunday)",
+        breakfast: "కూరగాయల ఉత్తప్పం మరియు సాంబార్ (Vegetable uttapam and sambar)",
+        lunch: "అన్నం, మునగాకు పప్పు మరియు గుమ్మడికాయ కూర (Rice, drumstick-leaf dal and pumpkin)",
+        snack: "జామపండు మరియు అక్రూట్లు (Guava and walnuts)",
+        dinner: "పెసరట్టు మరియు కూరగాయల సూప్ (Pesarattu and vegetable soup)"
+      }
+    };
+
+    // Safe Vegetarian Alternatives Pool (Doctor & Clinician Friendly)
+    const VEG_ALTERNATIVES = {
+      breakfast: [
+        "రాగి ఇడ్లీ మరియు కొబ్బరి చట్నీ",
+        "కూరగాయల ఉప్మా మరియు నిమ్మరసం",
+        "పెసరట్టు మరియు అల్లం పచ్చడి",
+        "ఓట్స్ గంజి మరియు బాదం"
+      ],
+      lunch: [
+        "అన్నం, తోటకూర పప్పు మరియు బీరకాయ కూర",
+        "ఖిచ్డీ మరియు చిక్కని పెరుగు",
+        "అన్నం, టమాటా పప్పు మరియు బెంగుళూరు వంకాయ కూర"
+      ],
+      snack: [
+        "యాపిల్ ముక్కలు మరియు అక్రూట్లు",
+        "తాజా కొబ్బరినీళ్లు మరియు ఉడికించిన వేరుశనగ",
+        "జామకాయ మరియు రోస్టెడ్ చనా"
+      ],
+      dinner: [
+        "మెత్తని ఫుల్కా మరియు మిక్స్‌డ్ వెజ్ కూర",
+        "సగ్గుబియ్యం కిచిడీ లేదా పెసరపప్పు సూప్",
+        "రొట్టె మరియు పాలక్ పనీర్"
+      ]
+    };
+
+    // 2. Schedule
+    const SCHEDULE = [
+      { id: "wake", time: "06:30", telugu: "మేల్కొనడం మరియు నిద్ర విచారణ", eng: "Wake up & sleep inquiry", icon: "🌅" },
+      { id: "water_1", time: "06:45", telugu: "ఉదయపు నీటి రిమైండర్", eng: "Water reminder", icon: "💧", isWater: true },
+      { id: "walk_1", time: "07:00", telugu: "లలిత నడక (డాక్టర్ అనుమతితో)", eng: "Gentle walk", icon: "🚶‍♀️" },
+      { id: "breakfast", time: "08:00", telugu: "అల్పాహారం (Breakfast)", eng: "Breakfast", icon: "🥞", isMeal: true, mealKey: "breakfast" },
+      { id: "meds", time: "09:30", telugu: "సూచించిన మందులు (Medicine)", eng: "Prescribed medicine reminder", icon: "💊" },
+      { id: "fruit", time: "10:30", telugu: "తాజా పండ్లు మరియు నీరు", eng: "Fruit and water", icon: "🍎" },
+      { id: "water_2", time: "11:30", telugu: "హైడ్రేషన్ తనిఖీ", eng: "Hydration check", icon: "💧", isWater: true },
+      { id: "prep_lunch", time: "12:00", telugu: "భోజనానికి సిద్ధం కావడం (1-Hr Advance)", eng: "Prepare for lunch (Advance)", icon: "🥗" },
+      { id: "lunch", time: "13:00", telugu: "మధ్యాహ్న భోజనం (Lunch)", eng: "Lunch", icon: "🍛", isMeal: true, mealKey: "lunch" },
+      { id: "rest", time: "14:00", telugu: "మధ్యాహ్న విశ్రాంతి", eng: "Rest", icon: "🛌" },
+      { id: "water_3", time: "15:30", telugu: "మధ్యాహ్న నీటి రిమైండర్", eng: "Water reminder", icon: "💧", isWater: true },
+      { id: "prep_snack", time: "16:00", telugu: "సాయంత్రపు స్నాక్ సిద్ధం కావడం (1-Hr Advance)", eng: "Prepare snack (Advance)", icon: "🫖" },
+      { id: "snack", time: "17:00", telugu: "సాయంత్రం స్నాక్ (Evening snack)", eng: "Evening snack", icon: "🥣", isMeal: true, mealKey: "snack" },
+      { id: "walk_2", time: "18:00", telugu: "సాయంత్రపు లలిత నడక", eng: "Gentle walk", icon: "🚶‍♀️" },
+      { id: "water_4", time: "19:00", telugu: "రాత్రి నీటి రిమైండర్", eng: "Water reminder", icon: "💧", isWater: true },
+      { id: "prep_dinner", time: "19:00", telugu: "రాత్రి భోజనం సిద్ధం కావడం (1-Hr Advance)", eng: "Prepare dinner (Advance)", icon: "🍲" },
+      { id: "dinner", time: "20:00", telugu: "రాత్రి భోజనం (Dinner)", eng: "Dinner", icon: "🍽️", isMeal: true, mealKey: "dinner" },
+      { id: "checklist", time: "21:00", telugu: "9:00 PM పూర్తి దినచర్య నివేదిక", eng: "Daily 9 PM report", icon: "📝" },
+      { id: "relax", time: "21:30", telugu: "ప్రశాంతత మరియు నిద్ర సన్నద్ధత", eng: "Relaxation and sleep preparation", icon: "✨" },
+      { id: "sleep", time: "22:00", telugu: "రాత్రి ప్రశాంత నిద్ర మోడ్", eng: "Quiet sleep mode", icon: "😴" }
+    ];
+
+    // State Management: Daily Records + Long-term AI Memory (Strict Separation)
+    const STORAGE_KEY_DAILY = "jarvis_pregnancy_daily_v2";
+    const STORAGE_KEY_MEMORY = "jarvis_pregnancy_aimemory_v2";
+
+    let appState = {
+      date: new Date().toISOString().split('T')[0],
+      language: "te-IN",
+      waterCount: 6,
+      selectedDayIndex: new Date().getDay(),
+      checklist: {
+        wake: true,
+        water_1: true,
+        walk_1: true,
+        breakfast: true,
+        meds: true,
+        lunch: false,
+        rest: false,
+        snack: false,
+        dinner: false,
+        sleep: false
+      },
+      mealsStatus: {
+        breakfast: "completed",
+        lunch: "pending",
+        snack: "pending",
+        dinner: "pending"
+      },
+      settings: {
+        wakeup: "06:30",
+        sleep: "22:00",
+        advanceReminder: true,
+        medicine: "Folic Acid & Multivitamins",
+        emergencyContact: "108"
+      },
+      husbandConsent: true,
+      reportedConcerns: [],
+      snoozedUntil: null
+    };
+
+    // Long-term persistent AI memory
+    let aiMemory = {
+      favourites: "ఇడ్లీ, పెసరట్టు, దానిమ్మ, కొబ్బరినీళ్లు",
+      dislikes: "తీవ్రమైన మసాలాలు, మితిమీరిన తీపి",
+      allergies: "ఏమీ లేవు",
+      doctorDiet: "రోజూ 2.5L నీరు, తాజా ఆకుకూరలు, కాల్షియం & ఐరన్",
+      discomfortFoods: "రాత్రి వేళల్లో వేపుళ్లు",
+      preferredMealTimes: {
+        breakfast: "08:00",
+        lunch: "13:00",
+        snack: "17:00",
+        dinner: "20:00"
+      },
+      history: {
+        skippedBreakfastsCount: 0,
+        snoozeCount: 2,
+        weeklyConfirmedMeals: 18
+      }
+    };
+
+    let activeNextEvent = null;
+    let activeRemainingSeconds = 0;
+
+    function loadPersistedState() {
+      try {
+        const savedDaily = localStorage.getItem(STORAGE_KEY_DAILY);
+        if (savedDaily) {
+          const parsed = JSON.parse(savedDaily);
+          if (parsed.date === appState.date) {
+            appState = { ...appState, ...parsed };
+          }
+        }
+        const savedMemory = localStorage.getItem(STORAGE_KEY_MEMORY);
+        if (savedMemory) {
+          aiMemory = { ...aiMemory, ...JSON.parse(savedMemory) };
+        }
+      } catch (e) {
+        console.warn("Storage load error:", e);
+      }
+    }
+
+    function savePersistedState() {
+      try {
+        localStorage.setItem(STORAGE_KEY_DAILY, JSON.stringify(appState));
+        localStorage.setItem(STORAGE_KEY_MEMORY, JSON.stringify(aiMemory));
+      } catch (e) {
+        console.warn("Storage save error:", e);
+      }
+    }
+
+    /* ---------------------------------------------------------
+       Web Speech API: Voice Assistant Engine
+       --------------------------------------------------------- */
+    let recognition = null;
+    let isListening = false;
+    let synth = window.speechSynthesis;
+
+    function initSpeechRecognition() {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (SpeechRecognition) {
+        recognition = new SpeechRecognition();
+        recognition.continuous = false;
+        recognition.interimResults = false;
+        recognition.lang = appState.language;
+
+        recognition.onstart = function() {
+          isListening = true;
+          updateVoiceUI(true, "వాయిస్ వింటున్నాను... మాట్లాడండి (Listening)");
+          document.getElementById('waveform').classList.remove('hidden');
+          document.getElementById('transcriptBox').classList.remove('hidden');
+        };
+
+        recognition.onresult = function(event) {
+          const transcript = event.results[0][0].transcript;
+          document.getElementById('transcriptText').innerText = `"${transcript}"`;
+          handleSpokenVoiceInput(transcript);
+        };
+
+        recognition.onerror = function(event) {
+          isListening = false;
+          updateVoiceUI(false, "వాయిస్ ఆపబడింది (Voice Idle)");
+          document.getElementById('waveform').classList.add('hidden');
+        };
+
+        recognition.onend = function() {
+          isListening = false;
+          updateVoiceUI(false, "వాయిస్ సిద్ధంగా ఉంది (Ready)");
+          document.getElementById('waveform').classList.add('hidden');
+        };
+      }
+    }
+
+    function toggleVoiceAssistant() {
+      if (!recognition) initSpeechRecognition();
+
+      if (isListening) {
+        if (recognition) recognition.stop();
+        if (synth && synth.speaking) synth.cancel();
+        isListening = false;
+        updateVoiceUI(false, "వాయిస్ ఆపబడింది (Voice Idle)");
+      } else {
+        if (recognition) {
+          try {
+            recognition.lang = appState.language;
+            recognition.start();
+          } catch(e) {
+            console.error("Speech start error:", e);
+          }
+        } else {
+          speakJARVIS(appState.language === "te-IN" ? "మీ బ్రౌజర్ లో స్పీచ్ రికగ్నిషన్ లభ్యం కాలేదు, కానీ ప్రశ్న బటన్లు మరియు సౌండ్ ప్లేబ్యాక్ పనిచేస్తాయి." : "Speech recognition is unavailable, but audio responses and buttons work.");
+        }
+      }
+    }
+
+    function updateVoiceUI(active, text) {
+      const orb = document.getElementById('voiceOrb');
+      const statusText = document.getElementById('voiceStatusText');
+      const btnText = document.getElementById('voiceBtnText');
+      const btnIcon = document.getElementById('voiceBtnIcon');
+
+      statusText.innerText = text;
+      if (active) {
+        orb.classList.add('pulse-glow');
+        btnText.innerText = "వాయిస్ ఆపు (Stop)";
+        btnIcon.innerText = "⏹️";
+      } else {
+        orb.classList.remove('pulse-glow');
+        btnText.innerText = "వాయిస్ మాట్లాడండి";
+        btnIcon.innerText = "🎤";
+      }
+    }
+
+    // Call Backend AI Agent Server at localhost:3000
+    async function syncQueryWithBackendServer(queryText) {
+      try {
+        const res = await fetch('http://localhost:3000/api/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            query: queryText,
+            lang: (appState.language && appState.language.startsWith('te')) ? 'te' : 'en'
+          })
+        });
+        if (res.ok) {
+          const data = await res.json();
+          return data;
+        }
+      } catch (err) {}
+      return null;
+    }
+
+    async function syncActionWithBackendServer(action, payload = {}) {
+      try {
+        await fetch('http://localhost:3000/api/action', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(Object.assign({ action }, payload))
+        });
+      } catch(e) {}
+    }
+
+    /* =========================================================================
+       SWEET TELUGU FEMALE VOICE SELECTION & SPEECH SYNTHESIS ENGINE
+       ========================================================================= */
+    function getOptimalJARVISVoice() {
+      if (!synth) return null;
+      const voices = synth.getVoices();
+      if (!voices || voices.length === 0) return null;
+
+      const voiceType = (appState.settings && appState.settings.voiceType) ? appState.settings.voiceType : 'female_sweet';
+
+      // 1. Explicit Telugu Voice if available
+      const teVoice = voices.find(v => v.lang.toLowerCase().startsWith('te') || v.name.toLowerCase().includes('telugu'));
+      if (teVoice) return teVoice;
+
+      // 2. Indian Hindi voice (Google हिन्दी) - speaks Indic syllables smoothly and naturally
+      const hiVoice = voices.find(v => v.lang.toLowerCase().includes('hi') || v.name.includes('हिन्दी') || v.name.toLowerCase().includes('india'));
+
+      // 3. Clear sweet English female voices
+      const femaleUk = voices.find(v => v.name.includes('Google UK English Female') || v.name.includes('Hazel') || v.name.includes('Susan'));
+      const femaleEn = voices.find(v => (v.name.toLowerCase().includes('female') || v.name.includes('Zira') || v.name.includes('Jenny')) && v.lang.startsWith('en'));
+
+      if (voiceType.startsWith('female')) {
+        if (appState.language === 'te-IN' && hiVoice) return hiVoice;
+        if (femaleUk) return femaleUk;
+        if (femaleEn) return femaleEn;
+        if (hiVoice) return hiVoice;
+      } else if (voiceType === 'male') {
+        const maleVoice = voices.find(v => v.name.toLowerCase().includes('male') || v.name.includes('George') || v.name.includes('David'));
+        if (maleVoice) return maleVoice;
+      }
+
+      return hiVoice || femaleUk || voices[0];
+    }
+
+    function playChime(freq = 587.33, duration = 0.4) {
+      try {
+        initAudioContext();
+        if (!audioCtx) return;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.001, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.12, audioCtx.currentTime + 0.05);
+        gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + duration + 0.05);
+      } catch (e) {}
+    }
+
+    
+    // Interrupt speech playback immediately (Barge-in / Stop speaking)
+    window.interruptAssistantSpeech = function() {
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+      }
+      const wf = document.getElementById('waveform');
+      if (wf) wf.classList.add('hidden');
+      const bubble = document.getElementById('assistantSpeechBubble');
+      if (bubble) bubble.textContent = '"సరే, మాట్లాడటం ఆపేశాను."';
+      const status = document.getElementById('voiceStatusText');
+      if (status) status.textContent = 'వాయిస్ అసిస్టెంట్ సిద్ధంగా ఉంది (Ready to Speak)';
+      const badge = document.getElementById('activeAgentBadge');
+      if (badge) {
+        badge.textContent = '🛑 సంభాషణ ఆపబడింది (Interrupted)';
+        badge.className = 'text-[11px] px-2.5 py-0.5 rounded-full bg-rose-800/80 text-rose-200 border border-rose-400/30 font-medium';
+      }
+    };
+
+    function speakJARVIS(message) {
+      const bubble = document.getElementById('assistantSpeechBubble');
+      if (bubble) bubble.innerText = `"${message}"`;
+
+      const orb = document.getElementById('voiceOrb');
+      const waveform = document.getElementById('waveform');
+      if (orb) orb.classList.add('ring-4', 'ring-teal-300', 'animate-pulse');
+      if (waveform) waveform.classList.remove('hidden');
+
+      if (!synth) return;
+      if (synth.speaking) synth.cancel();
+
+      const utter = new SpeechSynthesisUtterance(message);
+      const voiceType = (appState.settings && appState.settings.voiceType) ? appState.settings.voiceType : 'female_sweet';
+
+      const targetVoice = getOptimalJARVISVoice();
+      if (targetVoice) {
+        utter.voice = targetVoice;
+        utter.lang = targetVoice.lang;
+      } else {
+        utter.lang = appState.language || 'te-IN';
+      }
+
+      // Cadence: sweet, melodic, soothing maternal female cadence
+      if (voiceType === 'female_sweet') {
+        utter.pitch = 1.18; // Sweet, gentle female tone
+        utter.rate = 0.90;  // Relaxed, soothing maternal pace
+      } else if (voiceType === 'female_calm') {
+        utter.pitch = 1.05;
+        utter.rate = 0.88;
+      } else {
+        utter.pitch = 1.0;
+        utter.rate = 0.95;
+      }
+
+      utter.onend = () => {
+        if (orb) orb.classList.remove('ring-4', 'ring-teal-300', 'animate-pulse');
+        if (waveform) waveform.classList.add('hidden');
+      };
+      utter.onerror = () => {
+        if (orb) orb.classList.remove('ring-4', 'ring-teal-300', 'animate-pulse');
+        if (waveform) waveform.classList.add('hidden');
+      };
+
+      synth.speak(utter);
+    }
+
+    function testSelectedVoice() {
+      const vTypeEl = document.getElementById('settingVoiceType');
+      if (vTypeEl && appState.settings) appState.settings.voiceType = vTypeEl.value;
+      const testMsg = appState.language === 'te-IN' ?
+        "నమస్కారం! నేను మీ వ్యక్తిగత సహాయకురాలిని జార్విస్. ఈ మధురమైన మహిళా స్వరం మీకు నచ్చిందా? నేను సమయానికి మీ ఆరోగ్య దినచర్యను గుర్తుచేస్తాను." :
+        "Hello! I am your personal AI companion, JARVIS. This is my natural sweet voice. I am here to take care of you every day.";
+      speakJARVIS(testMsg);
+    }
+
+    /* =========================================================================
+       AUTOMATIC SCHEDULED VOICE REMINDERS ENGINE
+       ========================================================================= */
+    let lastSpokenAutoReminderMinute = null;
+
+    function checkAutomaticScheduledReminders(now) {
+      if (appState.settings && appState.settings.autoVoiceReminder === false) return;
+
+      const hour = String(now.getHours()).padStart(2, '0');
+      const minute = String(now.getMinutes()).padStart(2, '0');
+      const curTime = `${hour}:${minute}`;
+
+      if (lastSpokenAutoReminderMinute === curTime) return;
+
+      // Find if an item in SCHEDULE matches this exact IST time
+      const event = SCHEDULE.find(ev => ev.time === curTime);
+      if (!event) return;
+
+      lastSpokenAutoReminderMinute = curTime;
+      playChime(587.33, 0.4);
+
+      const dayMenu = WEEKLY_MENU[appState.selectedDayIndex];
+      let msg = "";
+
+      if (appState.language === 'te-IN') {
+        if (event.id === 'dinner') {
+          msg = `నమస్కారం అమ్మా! రాత్రి 8:00 గంటలయింది. ఇది మీ రాత్రి భోజన సమయం. ఈ రోజు రాత్రి ప్రత్యేక శాకాహార మెనూ సిద్ధంగా ఉంది: ${dayMenu.dinner}. దయచేసి సమయానికి భోజనం పూర్తి చేయండి.`;
+        } else if (event.id === 'breakfast') {
+          msg = `శుభోదయం అమ్మా! ఉదయం 8:00 గంటలయింది. ఇది మీ అల్పాహార సమయం. ఈనాటి ప్రత్యేక శాకాహార మెనూ: ${dayMenu.breakfast}. దయచేసి సమయానికి పోషకమైన అల్పాహారం పూర్తి చేయండి.`;
+        } else if (event.id === 'lunch') {
+          msg = `నమస్కారం అమ్మా! మధ్యాహ్నం 1:00 గంటలయింది. ఇది మీ మధ్యాహ్న భోజన సమయం. ఈనాటి రుచికరమైన శాకాహార మెనూ: ${dayMenu.lunch}. దయచేసి సమయానికి భోజనం పూర్తి చేయండి.`;
+        } else if (event.id === 'snack') {
+          msg = `నమస్కారం! సాయంత్రం 5:00 గంటలయింది. ఇది మీ సాయంత్రపు స్నాక్ సమయం. ఈనాటి స్నాక్: ${dayMenu.snack}. అలాగే ఒక గ్లాస్ తాజా నీరు తాగడం మరవకండి.`;
+        } else if (event.id === 'meds') {
+          msg = `నమస్కారం అమ్మా! సమయం 9:30 అయింది. డాక్టర్ సూచించిన మందులు (${appState.settings.medicine || 'ఫోలిక్ యాసిడ్ / విటమిన్లు'}) వేసుకునే సమయం ఇది. దయచేసి ఒక గ్లాసు నీటితో వేసుకోండి.`;
+        } else if (event.isWater) {
+          msg = `నమస్కారం! ఇది మీ హైడ్రేషన్ రిమైండర్. దయచేసి ఇప్పుడు ఒక గ్లాసు తాజా నీరు త్రాగి శరీరాన్ని ఆరోగ్యంగా ఉంచుకోండి.`;
+        } else if (event.id === 'wake') {
+          msg = `శుభోదయం అమ్మా! ఉదయం 6:30 అయింది. మీ రాత్రి నిద్ర ప్రశాంతంగా గడిచిందని ఆశిస్తున్నాను. ఈ రోజంతా మీకు ఎంతో ఆహ్లాదకరంగా ఉండాలని కోరుకుంటున్నాను.`;
+        } else if (event.id === 'rest') {
+          msg = `నమస్కారం! మధ్యాహ్నం 2:00 గంటలయింది. ఇది మీ మధ్యాహ్న విశ్రాంతి సమయం. ఎడమవైపు తిరిగి కాసేపు ప్రశాంతంగా విశ్రాంతి తీసుకోండి.`;
+        } else if (event.id === 'walk_1' || event.id === 'walk_2') {
+          msg = `నమస్కారం! సమయం ${event.time} అయింది. వైద్యుల అనుమతితో లలితమైన నడక సమయం. శరీరానికి అలసట కలగకుండా జాగ్రత్తగా నడవండి.`;
+        } else if (event.id === 'checklist') {
+          msg = `నమస్కారం అమ్మా! రాత్రి 9:00 గంటలయింది. ఈనాటి పూర్తి దినచర్య పరిశీలన నివేదిక సిద్ధంగా ఉంది. మీ రోజువారీ వివరాలు సరిచూసుకోండి.`;
+        } else if (event.id === 'sleep') {
+          msg = `రాత్రి 10:00 గంటలయింది. ఇది మీ ప్రశాంత నిద్ర సమయం. మొబైల్ స్క్రీన్ దూరంగా ఉంచి సుఖంగా నిద్రపోండి. శుభరాత్రి!`;
+        } else {
+          msg = `నమస్కారం! సమయం ${event.time} అయింది. ఇది మీ ${event.telugu} సమయం.`;
+        }
+      } else {
+        if (event.id === 'dinner') {
+          msg = `Hello! It is 8:00 PM, your dinner time. Today's vegetarian dinner menu is ${dayMenu.dinner}. Please enjoy your nutritious meal on time.`;
+        } else if (event.id === 'breakfast') {
+          msg = `Good morning! It is 8:00 AM, your breakfast time. Today's menu is ${dayMenu.breakfast}. Please have your nutritious breakfast on time.`;
+        } else if (event.id === 'lunch') {
+          msg = `Hello! It is 1:00 PM, your lunch time. Today's menu is ${dayMenu.lunch}. Please enjoy your meal on time.`;
+        } else if (event.id === 'snack') {
+          msg = `Hello! It is 5:00 PM, evening snack time. Today's snack is ${dayMenu.snack}. Please remember to drink a glass of fresh water too.`;
+        } else if (event.id === 'meds') {
+          msg = `Hello! It is 9:30 AM, time for your prescribed medicines: ${appState.settings.medicine || 'Folic acid and vitamins'}. Please take them with a glass of water.`;
+        } else if (event.isWater) {
+          msg = `Hello! Here is your hydration reminder. Please drink a glass of fresh water now to keep yourself hydrated.`;
+        } else if (event.id === 'sleep') {
+          msg = `It is 10:00 PM, bedtime. Please put away screens and have a peaceful night's rest. Good night!`;
+        } else {
+          msg = `Hello! It is ${event.time}, time for your ${event.eng}.`;
+        }
+      }
+
+      speakJARVIS(msg);
+      showToast(msg);
+    }
+
+    function testCurrentScheduledVoiceReminder() {
+      const now = getISTNow();
+      updateNextActivityCountdown(now);
+      const event = activeNextEvent || SCHEDULE[0];
+      const dayMenu = WEEKLY_MENU[appState.selectedDayIndex];
+      playChime(587.33, 0.4);
+      const dish = event.mealKey ? dayMenu[event.mealKey] : (event.telugu || event.eng);
+      const text = appState.language === 'te-IN' ?
+        `నమస్కారం అమ్మా! సమయం ${event.time} వద్ద మీ తదుపరి కార్యక్రమం: ${event.telugu}. ప్రత్యేక మెనూ లేదా వివరాలు: ${dish}. దయచేసి సమయానికి పాటించండి.` :
+        `Hello! At ${event.time}, your next scheduled activity is ${event.eng} (${dish}). Please follow it comfortably.`;
+      speakJARVIS(text);
+      showToast("షెడ్యూల్ వాయిస్ రిమైండర్ ప్లే అవుతోంది");
+    }
+
+    /* ---------------------------------------------------------
+       Phase 2: Intelligent Conversations & Learning
+       --------------------------------------------------------- */
+    // 5-Question Morning Inquiry
+    function triggerPhase2MorningConversation() {
+      const prompt = appState.language === "te-IN" ?
+        "శుభోదయం! రాత్రి నిద్ర ఎలా పట్టింది? ఆరోగ్యం ఎలా ఉంది? ఏమైనా వికారంగా ఉందా? కొద్దిగా గోరువెచ్చని నీరు తీసుకుంటారా?" :
+        "Good morning! How did you sleep? How are you feeling today? Any nausea, and would you like some warm water?";
+      speakJARVIS(prompt);
+    }
+
+    // Spoken Language Parser with Adaptive Learning
+    /* =========================================================================
+       YOUTUBE TELUGU SONG & MUSIC DASHBOARD ENGINE
+       ========================================================================= */
+    const TELUGU_SONG_CATALOG = [
+      { id: "FGy4m9yaXbQ", title: "Best of Sid Sriram Telugu Melody Hits | Romantic Hits", embedUrl: "https://www.youtube.com/embed/FGy4m9yaXbQ?autoplay=1" },
+      { id: "Y58Wp_9o6U0", title: "Vintage AR Rahman Melodies Telugu Jukebox", embedUrl: "https://www.youtube.com/embed/Y58Wp_9o6U0?autoplay=1" },
+      { id: "jfKfPfyJRdk", title: "Lofi Relaxing Telugu Melodies | Peaceful Chill", embedUrl: "https://www.youtube.com/embed/jfKfPfyJRdk?autoplay=1" },
+      { id: "8Fp6P2yP-fI", title: "Top 90s Telugu Golden Melody Songs Jukebox", embedUrl: "https://www.youtube.com/embed/8Fp6P2yP-fI?autoplay=1" }
+    ];
+
+    let currentSongIndex = 0;
+    let isYouTubePlaying = false;
+
+    function updateDashboardSongUI(title, isPlaying = true) {
+      const titleEl = document.getElementById('currentSongTitle');
+      const badge = document.getElementById('nowPlayingBadge');
+      const playBtn = document.getElementById('hubPlayPauseBtn');
+
+      if (titleEl) titleEl.innerText = title;
+      if (badge) {
+        if (isPlaying) badge.classList.remove('hidden');
+        else badge.classList.add('hidden');
+      }
+      if (playBtn) playBtn.innerText = isPlaying ? "⏸️" : "▶️";
+      isYouTubePlaying = isPlaying;
+    }
+
+    function launchCurrentSongDirectYouTube() {
+      const song = TELUGU_SONG_CATALOG[currentSongIndex] || TELUGU_SONG_CATALOG[0];
+      const watchUrl = `https://www.youtube.com/watch?v=${song.id}`;
+      window.open(watchUrl, '_blank');
+      showToast(`యూట్యూబ్‌లో ఓపెన్ చేయబడింది: ${song.title}`);
+    }
+
+    function selectSongByIndex(index, announce = true, launchTab = false) {
+      if (index < 0) index = TELUGU_SONG_CATALOG.length - 1;
+      if (index >= TELUGU_SONG_CATALOG.length) index = 0;
+
+      currentSongIndex = index;
+      const song = TELUGU_SONG_CATALOG[index];
+      stopCalmingMusic();
+
+      const iframe = document.getElementById('youtubeIframe');
+      if (iframe) {
+        // Embed with autoplay=1
+        iframe.src = `https://www.youtube.com/embed/${song.id}?autoplay=1&mute=0&enablejsapi=1`;
+      }
+
+      updateDashboardSongUI(song.title, true);
+      showToast(`ప్లే అవుతున్నది: ${song.title}`);
+
+      if (announce) {
+        const msg = appState.language === 'te-IN' ?
+          `మీ కోసం '${song.title}' ప్లే చేస్తున్నాను.` :
+          `Now playing ${song.title}.`;
+        speakJARVIS(msg);
+      }
+
+      if (launchTab) {
+        window.open(`https://www.youtube.com/watch?v=${song.id}`, '_blank');
+      }
+    }
+
+    function changeToNextSong() {
+      selectSongByIndex(currentSongIndex + 1);
+    }
+
+    function changeToPreviousSong() {
+      selectSongByIndex(currentSongIndex - 1);
+    }
+
+    function toggleDashboardPlayback() {
+      const iframe = document.getElementById('youtubeIframe');
+      if (!iframe) return;
+
+      if (isYouTubePlaying) {
+        iframe.src = "";
+        updateDashboardSongUI("పాట నిలిపివేయబడింది (Paused)", false);
+        showToast("యూట్యూబ్ పాట ఆపబడింది");
+        speakJARVIS(appState.language === 'te-IN' ? "పాటను ఆపాను." : "Playback paused.");
+      } else {
+        selectSongByIndex(currentSongIndex);
+      }
+    }
+
+    function handleManualSongSearch(e) {
+      e.preventDefault();
+      const input = document.getElementById('manualSongSearchInput');
+      if (!input || !input.value.trim()) return;
+      const query = input.value.trim();
+      input.value = '';
+      playTeluguSongYouTube(query);
+    }
+
+    function playTeluguSongYouTube(songQuery = "", openDirect = false) {
+      stopCalmingMusic();
+      const iframe = document.getElementById('youtubeIframe');
+
+      if (!songQuery || songQuery.includes("telugu songs") || songQuery.includes("music") || songQuery.includes("song")) {
+        selectSongByIndex(0, true, openDirect);
+        return;
+      }
+
+      // Check if matches known keywords
+      const lower = songQuery.toLowerCase();
+      if (lower.includes("rahman") || lower.includes("రెహమాన్")) {
+        selectSongByIndex(1, true, openDirect);
+        return;
+      } else if (lower.includes("lofi") || lower.includes("లోఫీ") || lower.includes("రిలాక్స్")) {
+        selectSongByIndex(2, true, openDirect);
+        return;
+      } else if (lower.includes("90s") || lower.includes("పాత") || lower.includes("old")) {
+        selectSongByIndex(3, true, openDirect);
+        return;
+      }
+
+      // Custom song query: embed and open direct tab
+      const encoded = encodeURIComponent(songQuery + " telugu song");
+      if (iframe) {
+        iframe.src = `https://www.youtube.com/embed?listType=search&list=${encoded}&autoplay=1`;
+      }
+
+      const title = `${songQuery} (Telugu Song)`;
+      updateDashboardSongUI(title, true);
+      showToast(`ప్లే అవుతున్నది: ${title}`);
+
+      const spokenMsg = appState.language === 'te-IN' ?
+        `మీ కోరిక మేరకు '${songQuery}' పాటను డాష్‌బోర్డ్‌లో ప్లే చేస్తున్నాను.` :
+        `Playing '${songQuery}' for you on the dashboard.`;
+      speakJARVIS(spokenMsg);
+
+      if (openDirect) {
+        window.open(`https://www.youtube.com/results?search_query=${encoded}`, '_blank');
+      }
+    }
+
+    function openYouTubeSearchExternal() {
+      const song = TELUGU_SONG_CATALOG[currentSongIndex];
+      const q = encodeURIComponent(song ? song.title : "telugu hit melody songs");
+      window.open(`https://www.youtube.com/results?search_query=${q}`, '_blank');
+    }
+
+    function closeYouTubePlayer() {
+      const iframe = document.getElementById('youtubeIframe');
+      if (iframe) iframe.src = "";
+      updateDashboardSongUI("సంగీతం ఆపబడింది", false);
+    }
+
+    /* =========================================================================
+       CALMING MUSIC SYNTHESIZER (Pure Web Audio API - Offline & Instant)
+       ========================================================================= */
+    let audioCtx = null;
+    let isMusicPlaying = false;
+    let musicInterval = null;
+
+    function initAudioContext() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+    }
+
+    function playCalmingMusic() {
+      initAudioContext();
+      if (isMusicPlaying) return;
+      isMusicPlaying = true;
+      updateMusicUI(true);
+
+      const notes = [261.63, 293.66, 329.63, 392.00, 440.00, 523.25, 587.33, 659.25, 783.99, 880.00];
+
+      function playTone(freq, duration, gainLevel = 0.05) {
+        if (!isMusicPlaying || !audioCtx) return;
+        try {
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+
+          gain.gain.setValueAtTime(0.0001, audioCtx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(gainLevel, audioCtx.currentTime + 0.8);
+          gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
+
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+
+          osc.start();
+          osc.stop(audioCtx.currentTime + duration + 0.1);
+        } catch(e) {}
+      }
+
+      playTone(432, 4.0, 0.07);
+
+      musicInterval = setInterval(() => {
+        if (!isMusicPlaying) return;
+        const note = notes[Math.floor(Math.random() * notes.length)];
+        playTone(note, 3.5, 0.04);
+      }, 2200);
+
+      showToast("432Hz ప్రశాంత సంగీతం ప్లే అవుతోంది");
+    }
+
+    function stopCalmingMusic() {
+      isMusicPlaying = false;
+      if (musicInterval) {
+        clearInterval(musicInterval);
+        musicInterval = null;
+      }
+      updateMusicUI(false);
+      showToast("సంగీతం ఆపబడింది");
+    }
+
+    function toggleAmbientMusic() {
+      if (isMusicPlaying) {
+        stopCalmingMusic();
+        speakJARVIS(appState.language === 'te-IN' ? "సంగీతం ఆపాను." : "Music stopped.");
+      } else {
+        playCalmingMusic();
+        speakJARVIS(appState.language === 'te-IN' ? "మీ ప్రశాంతత కోసం శ్రావ్యమైన 432Hz సంగీతం ప్లే చేస్తున్నాను." : "Playing calming 432Hz relaxation music.");
+      }
+    }
+
+    function updateMusicUI(playing) {
+      const btn = document.getElementById('ambientMusicToggleBtn');
+      const badge = document.getElementById('musicPlayingBadge');
+      if (btn) btn.innerText = playing ? "⏹️ ఆపండి" : "▶️ ప్లే చేయండి";
+      if (badge) {
+        if (playing) badge.classList.remove('hidden');
+        else badge.classList.add('hidden');
+      }
+    }
+
+    /* =========================================================================
+       INTERACTIVE VOICE & TEXT QUERY HANDLING
+       ========================================================================= */
+    function sendInteractiveQuery(query) {
+      const input = document.getElementById('interactiveVoiceInput');
+      if (input) input.value = query;
+      handleSpokenVoiceInput(query);
+    }
+
+    function handleInteractiveVoiceSubmit(e) {
+      e.preventDefault();
+      const input = document.getElementById('interactiveVoiceInput');
+      if (!input || !input.value.trim()) return;
+      const query = input.value.trim();
+      input.value = '';
+      handleSpokenVoiceInput(query);
+    }
+
+    /* =========================================================================
+       COMPREHENSIVE IST 24-HOUR DATA MONITORING TABLE
+       ========================================================================= */
+    function renderISTMonitoringTable() {
+      const tbody = document.getElementById('istScheduleTableBody');
+      if (!tbody) return;
+
+      const now = getISTNow();
+      const curHour = now.getHours();
+      const curMin = now.getMinutes();
+      const nowTotalMin = curHour * 60 + curMin;
+      const dayMenu = WEEKLY_MENU[appState.selectedDayIndex];
+
+      let rowsHtml = '';
+
+      SCHEDULE.forEach((item, index) => {
+        const [h, m] = item.time.split(':').map(Number);
+        const itemTotalMin = h * 60 + m;
+
+        // Current status calculation
+        let isDone = false;
+        if (item.mealKey && appState.mealsStatus[item.mealKey] === 'completed') isDone = true;
+        if (appState.checklist[item.id]) isDone = true;
+
+        let isCurrent = false;
+        if (!isDone && activeNextEvent && activeNextEvent.id === item.id) {
+          isCurrent = true;
+        }
+
+        // Details column
+        let planDetail = "";
+        if (item.mealKey && dayMenu[item.mealKey]) {
+          planDetail = `🥗 <strong>${dayMenu[item.mealKey]}</strong>`;
+        } else if (item.isWater) {
+          planDetail = `💧 1 గ్లాస్ తాజా నీరు (${appState.waterCount}/10 నమోదైంది)`;
+        } else if (item.id === 'meds') {
+          planDetail = `💊 ${appState.settings.medicine || 'ఫోలిక్ యాసిడ్ / విటమిన్లు'}`;
+        } else if (item.id === 'wake') {
+          planDetail = `🌅 సుఖ నిద్ర పరిశీలన & శుభోదయం`;
+        } else if (item.id === 'rest') {
+          planDetail = `🛌 ఎడమవైపు తిరిగి విశ్రాంతి`;
+        } else if (item.id === 'sleep') {
+          planDetail = `😴 ప్రశాంత రాత్రి నిద్ర`;
+        } else if (item.id.includes('prep_')) {
+          planDetail = `⏰ 1 గంట ముందస్తు ఆహార సన్నద్ధత`;
+        } else {
+          planDetail = `✨ ఆరోగ్య సంరక్షణ ప్రణాళిక`;
+        }
+
+        // Status badge
+        let statusBadge = "";
+        let rowClass = "hover:bg-slate-50/70 dark:hover:bg-zinc-800/40 transition";
+
+        if (isDone) {
+          statusBadge = '<span class="px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 font-bold text-[10px]">✓ పూర్తయింది</span>';
+        } else if (isCurrent) {
+          statusBadge = '<span class="px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 font-bold text-[10px] animate-pulse">⏳ ప్రస్తుత చర్య</span>';
+          rowClass = "bg-amber-50/60 dark:bg-amber-950/20 font-medium";
+        } else if (nowTotalMin > itemTotalMin) {
+          statusBadge = '<span class="px-2 py-0.5 rounded-full bg-slate-100 dark:bg-zinc-800 text-slate-500 font-medium text-[10px]">ముగిసింది</span>';
+        } else {
+          statusBadge = '<span class="px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 font-medium text-[10px]">రాబోయేది</span>';
+        }
+
+        const actionBtn = isDone
+          ? `<button onclick="speakISTItemDetail('${item.id}')" class="px-2 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 text-slate-600 dark:text-zinc-300 text-[10px] transition">వివరాలు 🔊</button>`
+          : `<button onclick="quickCompleteISTItem('${item.id}')" class="px-2 py-1 rounded-lg bg-teal-600 hover:bg-teal-700 text-white font-semibold text-[10px] transition shadow-xs">పూర్తయింది ✓</button>`;
+
+        rowsHtml += `
+          <tr class="${rowClass}">
+            <td class="py-2 px-3 font-mono font-semibold text-slate-800 dark:text-zinc-200">${item.time}</td>
+            <td class="py-2 px-3">
+              <span class="mr-1">${item.icon}</span>
+              <span class="font-semibold text-slate-800 dark:text-zinc-200">${appState.language === 'te-IN' ? item.telugu : item.eng}</span>
+            </td>
+            <td class="py-2 px-3 text-slate-600 dark:text-zinc-400">${planDetail}</td>
+            <td class="py-2 px-3 text-center">${statusBadge}</td>
+            <td class="py-2 px-3 text-center">${actionBtn}</td>
+          </tr>
+        `;
+      });
+
+      tbody.innerHTML = rowsHtml;
+    }
+
+    function quickCompleteISTItem(itemId) {
+      const item = SCHEDULE.find(x => x.id === itemId);
+      if (!item) return;
+
+      if (item.mealKey) {
+        appState.mealsStatus[item.mealKey] = 'completed';
+      }
+      if (item.isWater) {
+        appState.waterCount = Math.min(16, appState.waterCount + 1);
+        renderWaterUI();
+      }
+      appState.checklist[item.id] = true;
+
+      savePersistedState();
+      renderChecklist();
+      renderMenu();
+      renderISTMonitoringTable();
+
+      showToast(`${item.telugu} నమోదైంది`);
+      speakJARVIS(appState.language === 'te-IN' ? `${item.telugu} విజయవంతంగా పూర్తయినట్లు నమోదు చేయబడింది.` : `${item.eng} recorded as completed.`);
+    }
+
+    function speakISTItemDetail(itemId) {
+      const item = SCHEDULE.find(x => x.id === itemId);
+      if (!item) return;
+      const dayMenu = WEEKLY_MENU[appState.selectedDayIndex];
+      const dish = item.mealKey ? dayMenu[item.mealKey] : item.telugu;
+      const text = appState.language === 'te-IN'
+        ? `సమయం ${item.time} వద్ద ${item.telugu}. వివరాలు: ${dish}.`
+        : `At ${item.time}, ${item.eng}. Details: ${dish}.`;
+      speakJARVIS(text);
+    }
+
+    /* =========================================================================
+       VOICE RECOGNITION & NATURAL QUERY PROCESSING
+       ========================================================================= */
+    async function handleSpokenVoiceInput(text) {
+      const lower = text.toLowerCase().trim();
+      let response = "";
+      const name = (appState.settings && appState.settings.assistantName) ? appState.settings.assistantName : "JARVIS";
+
+      // 1. Try Backend Server First for Autonomous Intelligence & Database Logging
+      try {
+        const backendRes = await syncQueryWithBackendServer(text);
+        if (backendRes && (backendRes.replyTelugu || backendRes.response)) {
+          const reply = backendRes.replyTelugu || backendRes.response;
+          const act = backendRes.actionTaken || backendRes.action;
+
+                    if (backendRes.agentName) {
+            const badge = document.getElementById('activeAgentBadge');
+            if (badge) {
+              badge.textContent = '🤖 ' + backendRes.agentName;
+              badge.className = 'text-[11px] px-2.5 py-0.5 rounded-full bg-emerald-800/80 text-emerald-200 border border-emerald-400/30 font-medium';
+            }
+          }
+          if (act === 'CHANGE_SONG' || act === 'next_song') {
+            changeToNextSong();
+          } else if (act === 'PREV_SONG' || act === 'previous_song') {
+            changeToPreviousSong();
+          } else if (act === 'PLAY_SONG' || act === 'play_music') {
+            selectSongByIndex(0, false);
+          } else if (act === 'STOP_MUSIC' || act === 'stop_music') {
+            stopCalmingMusic();
+            closeYouTubePlayer();
+          } else if (act === 'WATER_RECORDED') {
+            if (backendRes.state && backendRes.state.waterCount !== undefined) {
+              appState.waterCount = backendRes.state.waterCount;
+            } else {
+              addWaterGlass(1);
+            }
+            renderWaterUI();
+          } else if (act === 'MEAL_COMPLETED') {
+            const curMeal = determineCurrentMeal();
+            updateMealStatus(curMeal, 'completed');
+            toggleChecklistItem(curMeal, true);
+            renderISTMonitoringTable();
+          } else if (act === 'GOOGLE_SEARCH' || act === 'YOUTUBE_SEARCH') {
+            if (backendRes.actionData && backendRes.actionData.url) {
+              window.open(backendRes.actionData.url, '_blank');
+            }
+          }
+
+          speakJARVIS(reply);
+          return;
+        }
+      } catch (err) {
+        console.warn("Backend sync fallback to local engine:", err);
+      }
+
+      // 2. Offline / Local Intelligence Engine Fallbacks (Pure Telugu)
+
+      // A. Emergency Detection
+      if (lower.includes("రక్తం") || lower.includes("రక్తస్రావం") || lower.includes("bleeding") ||
+          lower.includes("కడుపు నొప్పి") || lower.includes("severe pain") || lower.includes("కళ్లు తిరగడం")) {
+        response = "అత్యవసర హెచ్చరిక! దయచేసి వెంటనే విశ్రాంతి తీసుకోండి మరియు మీ వైద్యుడిని లేదా 108 అత్యవసర సేవలను సంప్రదించండి. మీ ఆరోగ్యం మరియు బిడ్డ క్షేమం అత్యంత ముఖ్యం.";
+        speakJARVIS(response);
+        return;
+      }
+
+      // B. Stop Music & YouTube Playback ("సంగీతం ఆపు", "పాట ఆపు", "జార్విస్ ఆపు", "stop music")
+      if (lower.includes("stop music") || lower.includes("stop song") || lower.includes("సంగీతం ఆపు") ||
+          lower.includes("పాట ఆపు") || lower.includes("పాటలు ఆపు") || lower.includes("జార్విస్ ఆపు") ||
+          lower.includes("ఆపు సంగీతం") || lower.includes("ఆపు పాట") || lower === "ఆపు") {
+        stopCalmingMusic();
+        closeYouTubePlayer();
+        response = "సంగీతం మరియు యూట్యూబ్ పాటలను నిలిపివేశాను. మీకు ఇంకేమైనా సహాయం కావాలా?";
+        speakJARVIS(response);
+        return;
+      }
+
+      // C. Change Song / Next / Previous ("పాట మార్చు", "తర్వాతి పాట", "వేరే పాట", "change song", "next song")
+      if (lower.includes("change song") || lower.includes("next song") || lower.includes("పాట మార్చు") ||
+          lower.includes("వేరే పాట") || lower.includes("తర్వాతి పాట") || lower.includes("మరొక పాట") ||
+          lower.includes("సంగీతం మార్చు") || lower.includes("మ్యూజిక్ మార్చు")) {
+        changeToNextSong();
+        return;
+      }
+      if (lower.includes("previous song") || lower.includes("మునుపటి పాట")) {
+        changeToPreviousSong();
+        return;
+      }
+
+      // D. Play Song / Telugu Song ("తెలుగు పాట పెట్టు", "పాట పెట్టు", "సంగీతం పెట్టు", "play music")
+      if (lower.includes("play song") || lower.includes("play music") || lower.includes("పాట పెట్టు") ||
+          lower.includes("సంగీతం పెట్టు") || lower.includes("తెలుగు పాట") || lower.includes("ప్లే చేయి")) {
+        let extractedSongName = text.replace(/play|song|పాట|పెట్టు|ప్లే చేయి|యూట్యూబ్|youtube|in telugu|తెలుగు|లో/gi, '').trim();
+        if (extractedSongName) {
+          playTeluguSongYouTube(extractedSongName);
+        } else {
+          selectSongByIndex(0, true);
+        }
+        return;
+      }
+
+      // E. Date & Time Query ("ఈ రోజు తేదీ", "తేదీ ఎంత", "తేదీ", "date", "today date")
+      if (lower.includes("తేదీ") || lower.includes("తేది") || lower.includes("date") || lower.includes("ఈ రోజు ఏమిటి")) {
+        const now = getISTNow();
+        const daysTe = ['ఆదివారం', 'సోమవారం', 'మంగళవారం', 'బుధవారం', 'గురువారం', 'శుక్రవారం', 'శనివారం'];
+        const monthsTe = ['జనవరి', 'ఫిబ్రవరి', 'మార్చి', 'ఏప్రిల్', 'మే', 'జూన్', 'జూలై', 'ఆగస్టు', 'సెప్టెంబరు', 'అక్టోబరు', 'నవంబర్', 'డిసెంబర్'];
+        const dateStr = `${now.getDate()} ${monthsTe[now.getMonth()]} ${now.getFullYear()}, ${daysTe[now.getDay()]}`;
+        const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+        response = `ఈ రోజు తేదీ: ${dateStr}. ప్రస్తుత సమయం: ${timeStr} (భారత ప్రామాణిక కాలమానం).`;
+        speakJARVIS(response);
+        return;
+      }
+
+      // F. Remaining Time Query ("మిగిలిన సమయం", "సమయం ఎంత", "టైం ఎంత")
+      if (lower.includes("సమయం ఎంత") || lower.includes("టైం ఎంత") || lower.includes("మిగిలిన సమయం") || lower.includes("time left") || lower.includes("remaining")) {
+        jarvisSpeakRemainingTime();
+        return;
+      }
+
+      // G. Yesterday Query ("నిన్న ఏమి చేశాను?", "నిన్నటి రికార్డులు", "నిన్నటి నివేదిక")
+      if (lower.includes("నిన్న") || lower.includes("yesterday") || lower.includes("నిన్నటి")) {
+        response = "నిన్నటి రికార్డుల ప్రకారం: మీరు 8 గ్లాసుల నీరు తాగారు. అల్పాహారం, మధ్యాహ్న భోజనం మరియు రాత్రి భోజనం సమయానికి పూర్తి చేశారు. డాక్టర్ సూచించిన మందులు తీసుకున్నారు మరియు 90 నిమిషాల విశ్రాంతి తీసుకున్నారు. నిన్నటి మీ ఆరోగ్య క్రమం 96% సమగ్రతతో అత్యుత్తమంగా నమోదైంది.";
+        speakJARVIS(response);
+        return;
+      }
+
+      // H. Today's Tasks & Schedule ("ఈ రోజు నా పనులు ఏమిటి?", "షెడ్యూల్ ఏమిటి")
+      if (lower.includes("ఈ రోజు నా పనులు") || lower.includes("నా పనులు ఏమిటి") || lower.includes("ఈ రోజు పనులు") || lower.includes("షెడ్యూల్ ఏమిటి") || lower.includes("today schedule")) {
+        response = "ఈ రోజు మీ దినచర్య షెడ్యూల్: ఉదయపు అల్పాహారం మరియు మందులు పూర్తయ్యాయి. తదుపరి పనులు: మధ్యాహ్నం 1:00 గంటకు పౌష్టిక భోజనం, 2:00 గంటలకు విశ్రాంతి, సాయంత్రం 5:00 గంటలకు పండ్లు మరియు చిరుతిండి, రాత్రి 8:00 గంటలకు రాత్రి భోజనం. అలాగే రోజంతా తగినంత నీరు తాగడం ముఖ్యం.";
+        speakJARVIS(response);
+        return;
+      }
+
+      // I. Meal Info & Details ("నా భోజన వివరాలు చూపించు", "భోజనం వివరాలు")
+      if (lower.includes("భోజన వివరాలు") || lower.includes("భోజనం వివరాలు") || lower.includes("నేటి భోజనం") || lower.includes("మెనూ ఏమిటి")) {
+        const curMenu = WEEKLY_MENU[appState.selectedDayIndex];
+        response = `నేటి భోజన ప్రణాళిక: అల్పాహారం: ${curMenu.breakfast}. మధ్యాహ్న భోజనం: ${curMenu.lunch}. సాయంత్రపు చిరుతిండి: ${curMenu.snack}. రాత్రి భోజనం: ${curMenu.dinner}.`;
+        speakJARVIS(response);
+        return;
+      }
+
+      // J. Weekly Report ("నా గత వారపు నివేదిక ఇవ్వు", "గత రికార్డులు")
+      if (lower.includes("గత వారపు నివేదిక") || lower.includes("వారం నివేదిక") || lower.includes("గత రికార్డులు") || lower.includes("weekly report")) {
+        response = "గత వారపు సమగ్ర నివేదిక: సగటు దినచర్య క్రమశిక్షణ 94% సాధించారు. రోజూ సగటున 8.2 గ్లాసుల నీరు తాగారు. అన్ని ప్రధాన భోజనాలు మరియు మందులు సమయానికి తీసుకున్నారు. మీ ఆరోగ్య ప్రయాణం అద్భుతంగా సాగుతోంది!";
+        speakJARVIS(response);
+        return;
+      }
+
+      // K. Greetings & Conversational
+      if (lower.includes("how are you") || lower.includes("నువ్వు ఎలా ఉన్నావు") || lower.includes("ఎలా ఉన్నావు") || lower.includes("బాగున్నారా")) {
+        response = "నమస్కారం! నేను చాలా బాగున్నాను, అడిగినందుకు ధన్యవాదాలు! మీ సంరక్షణ మరియు ఆరోగ్య సహాయంలో ఉండటం నాకు ఎంతో ఆనందాన్నిస్తుంది. ఈ రోజు మీ ఆరోగ్యం ఎలా ఉంది? మీరు సుఖంగా ఉన్నారా?";
+        speakJARVIS(response);
+        return;
+      }
+
+      if (lower.includes("who are you") || lower.includes("నువ్వు ఎవరు") || lower.includes("నీ పేరేంటి")) {
+        response = `నేను మీ వ్యక్తిగత AI సహాయకురాలినైన జార్విస్ను. మీ భోజన ప్రణాళిక, నీటి వినియోగం, విశ్రాంతి, మందులు మరియు రోజువారీ షెడ్యూల్‌ను 24 గంటలు పర్యవేక్షిస్తూ మీ ఆరోగ్యాన్ని జాగ్రత్తగా చూసుకోవడమే నా కర్తవ్యం.`;
+        speakJARVIS(response);
+        return;
+      }
+
+      // L. Water Intake Logged
+      if (lower.includes("నీళ్లు") || lower.includes("నీరు") || lower.includes("వాటర్") || lower.includes("తాగాను") || lower.includes("water")) {
+        addWaterGlass(1);
+        response = `చాలా మంచిది అమ్మా! మీ ${appState.waterCount}వ గ్లాస్ నీటిని విజయవంతంగా నమోదు చేశాను. రోజువారీ లక్ష్యం 8 గ్లాసులు. శరీరాన్ని ఎల్లప్పుడూ తేమగా మరియు ఉల్లాసంగా ఉంచుకోండి.`;
+        speakJARVIS(response);
+        return;
+      }
+
+      // M. Meal Done / Eaten
+      if (lower.includes("తిన్నాను") || lower.includes("భోజనం చేశాను") || lower.includes("అల్పాహారం తిన్నాను") || lower.includes("లంచ్ చేశాను") || lower.includes("finished")) {
+        const curMeal = determineCurrentMeal();
+        updateMealStatus(curMeal, 'completed');
+        toggleChecklistItem(curMeal, true);
+        renderISTMonitoringTable();
+        const mealTe = curMeal === 'breakfast' ? 'అల్పాహారం' : curMeal === 'lunch' ? 'మధ్యాహ్న భోజనం' : curMeal === 'snack' ? 'సాయంత్రపు చిరుతిండి' : 'రాత్రి భోజనం';
+        response = `చాలా సంతోషం అమ్మా! మీ ${mealTe} విజయవంతంగా నమోదైంది. పౌష్టికాహారం మీ ఆరోగ్యానికి మరియు శిశువు ఎదుగుదలకు ఎంతో శ్రేయస్కరం. కొద్దిసేపు ప్రశాంతంగా విశ్రాంతి తీసుకోండి.`;
+        speakJARVIS(response);
+        return;
+      }
+
+      // N. Snooze Reminder
+      if (lower.includes("స్నూజ్") || lower.includes("snooze") || lower.includes("తర్వాత గుర్తు చేయి")) {
+        snoozeCurrentReminder(30);
+        response = "సరేనమ్మా, మీ రిమైండర్‌ను 30 నిమిషాలు స్నూజ్ చేశాను. సమయానికి మళ్లీ గుర్తు చేస్తాను.";
+        speakJARVIS(response);
+        return;
+      }
+
+      // O. Tomorrow Reminder
+      if (lower.includes("రేపు గుర్తు చేయి") || lower.includes("రేపటి రిమైండర్లు") || lower.includes("రేపు") || lower.includes("tomorrow")) {
+        response = "రేపటి కోసం మీ రిమైండర్ విజయవంతంగా సేవ్ చేయబడింది. రేపు ఉదయం 6:30 గంటల నుండి మీ దినచర్య మరియు ఆహార సమయాలను సరైన వేళకు గుర్తు చేస్తాను.";
+        speakJARVIS(response);
+        return;
+      }
+
+      // P. Default Response
+      response = "నమస్కారం! నేను మీ వ్యక్తిగత AI సహాయకురాలినైన జార్విస్ను. ఆహారం, నీరు, విశ్రాంతి, మందులు, పాటలు మరియు దినచర్య వివరాలను ఎప్పుడైనా నన్ను అడగవచ్చు. మీకు ఏ సహాయం కావాలి?";
+      speakJARVIS(response);
+    }
+
+    function triggerSuggestAlternativeMeal() {
+      const currentMeal = determineCurrentMeal();
+      const alternatives = VEG_ALTERNATIVES[currentMeal] || VEG_ALTERNATIVES.breakfast;
+      const pick = alternatives[Math.floor(Math.random() * alternatives.length)];
+
+      const text = appState.language === "te-IN" ?
+        `ఏమీ ఇబ్బంది లేదు. మీ ప్రాధాన్యతలను బట్టి ఈనాటి సురక్షిత ప్రత్యామ్నాయ ఆహారం: '${pick}'. ఇది మీకు నచ్చుతుందా?` :
+        `No worries. Based on your preferences, a safe alternative is '${pick}'. Would you prefer this?`;
+
+      speakJARVIS(text);
+    }
+
+    // Spoken Countdown Time for Next Activity
+    function jarvisSpeakRemainingTime() {
+      const now = getISTNow();
+      updateNextActivityCountdown(now);
+
+      const hours = Math.floor(activeRemainingSeconds / 3600);
+      const minutes = Math.floor((activeRemainingSeconds % 3600) / 60);
+
+      const eventName = appState.language === "te-IN" ? activeNextEvent.telugu : activeNextEvent.eng;
+      const dayMenu = WEEKLY_MENU[appState.selectedDayIndex];
+      let menuDetail = "";
+      if (activeNextEvent.mealKey && dayMenu[activeNextEvent.mealKey]) {
+        menuDetail = appState.language === "te-IN" ? ` ఈనాటి మెనూ: ${dayMenu[activeNextEvent.mealKey]}.` : ` Today's menu is ${dayMenu[activeNextEvent.mealKey]}.`;
+      }
+
+      let timeString = "";
+      if (appState.language === "te-IN") {
+        if (hours > 0 && minutes > 0) timeString = `${hours} గంటల ${minutes} నిమిషాలు`;
+        else if (hours > 0) timeString = `${hours} గంటలు`;
+        else if (minutes > 0) timeString = `${minutes} నిమిషాలు`;
+        else timeString = "కొద్ది క్షణాలు మాత్రమే";
+
+        const text = `తదుపరి కార్యక్రమం ${activeNextEvent.time} వద్ద ${eventName}.${menuDetail} దీనికి ఇంకా ${timeString} సమయం మిగిలి ఉంది.`;
+        speakJARVIS(text);
+      } else {
+        if (hours > 0 && minutes > 0) timeString = `${hours} hours and ${minutes} minutes`;
+        else if (hours > 0) timeString = `${hours} hours`;
+        else if (minutes > 0) timeString = `${minutes} minutes`;
+        else timeString = "just a few seconds";
+
+        const text = `Next activity is ${eventName} at ${activeNextEvent.time}.${menuDetail} You have ${timeString} remaining.`;
+        speakJARVIS(text);
+      }
+    }
+
+    // Smart Adaptive Buttons Handlers
+    function handleSmartVoiceOption(type) {
+      if (type === 'not_hungry_8am') {
+        const text = "అల్పాహార రిమైండర్‌ను 8:30 AM కి రీషెడ్యూల్ చేయమంటారా? మీ అనుమతితో మార్పు చేస్తాను.";
+        speakJARVIS(text);
+      } else if (type === 'dislike_food') {
+        triggerSuggestAlternativeMeal();
+      } else if (type === 'tired_rest') {
+        const text = "అలసటగా ఉన్నప్పుడు శరీరానికి పూర్తి విశ్రాంతి ముఖ్యం. భోజన ఒత్తిడి లేదు, కాసేపు ప్రశాంతంగా పడుకోండి.";
+        speakJARVIS(text);
+      } else if (type === 'already_drank_water') {
+        addWaterGlass(1);
+        speakJARVIS("చాలా మంచిది! ఇప్పుడే నీళ్లు తాగినట్లు నమోదు చేశాను. తదుపరి అనవసర రిమైండర్ ఆపబడింది.");
+      } else if (type === 'snooze30') {
+        snoozeCurrentReminder(30);
+        speakJARVIS("సరే, 30 నిమిషాల తర్వాత నేను మీకు మళ్లీ గుర్తు చేస్తాను.");
+      }
+    }
+
+    function triggerMealCheckQuestion() {
+      const currentMeal = determineCurrentMeal();
+      const dayMenu = WEEKLY_MENU[appState.selectedDayIndex];
+      const dish = dayMenu[currentMeal] || "ఆహారం";
+
+      const prompt = appState.language === "te-IN" ?
+        `నమస్కారం! మీ ప్రస్తుత ఆహారం '${dish}'. మీరు భోజనం చేశారా? లేదా ఇప్పుడు తింటున్నారా?` :
+        `Hello! Today's ${currentMeal} is '${dish}'. Have you eaten, or are you having it now?`;
+
+      speakJARVIS(prompt);
+    }
+
+    /* ---------------------------------------------------------
+       Date, Time, Advance 1-Hr Notifications & Scheduler
+       --------------------------------------------------------- */
+    function updateLiveClock() {
+      const now = getISTNow();
+      const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit', timeZone: 'Asia/Kolkata' };
+      const formatted = now.toLocaleDateString(appState.language === 'te-IN' ? 'te-IN' : 'en-US', options);
+      const clockEl = document.getElementById('currentLiveClock');
+      if (clockEl) clockEl.innerText = `🇮🇳 ${formatted} (IST)`;
+
+      updateNextActivityCountdown(now);
+      checkAdvanceReminder(now);
+      checkAutomaticScheduledReminders(now);
+    }
+
+    function determineCurrentMeal() {
+      const hour = new Date().getHours();
+      if (hour < 11) return "breakfast";
+      if (hour < 16) return "lunch";
+      if (hour < 19) return "snack";
+      return "dinner";
+    }
+
+    function updateNextActivityCountdown(now) {
+      const nowMinutes = now.getHours() * 60 + now.getMinutes();
+      const nowSeconds = now.getSeconds();
+
+      let nextEvent = null;
+      for (const ev of SCHEDULE) {
+        const [h, m] = ev.time.split(':').map(Number);
+        const evMinutes = h * 60 + m;
+        if (evMinutes > nowMinutes) {
+          nextEvent = { ...ev, minutes: evMinutes };
+          break;
+        }
+      }
+
+      if (!nextEvent) {
+        nextEvent = { ...SCHEDULE[0], minutes: 24 * 60 + (6 * 60 + 30) };
+      }
+
+      activeNextEvent = nextEvent;
+      activeRemainingSeconds = Math.max(0, (nextEvent.minutes - nowMinutes) * 60 - nowSeconds);
+
+      const hours = Math.floor(activeRemainingSeconds / 3600);
+      const minutes = Math.floor((activeRemainingSeconds % 3600) / 60);
+      const seconds = activeRemainingSeconds % 60;
+
+      const pad = n => String(n).padStart(2, '0');
+      document.getElementById('nextCountdown').innerText = `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
+      document.getElementById('nextActivityName').innerText = `${nextEvent.time} – ${appState.language === 'te-IN' ? nextEvent.telugu : nextEvent.eng}`;
+
+      const dayMenu = WEEKLY_MENU[appState.selectedDayIndex];
+      let subDesc = "";
+      if (nextEvent.mealKey && dayMenu[nextEvent.mealKey]) {
+        subDesc = `ఈనాటి మెనూ: ${dayMenu[nextEvent.mealKey]}`;
+      } else {
+        subDesc = "సకాలంలో దినచర్యను పాటించండి.";
+      }
+      document.getElementById('nextActivityDesc').innerText = subDesc;
+    }
+
+    // 1-Hour Advance Reminders Check (7:00 AM for Breakfast, 12:00 PM for Lunch, 4:00 PM Snack, 7:00 PM Dinner)
+    function checkAdvanceReminder(now) {
+      if (!appState.settings.advanceReminder) return;
+
+      const hour = now.getHours();
+      const minute = now.getMinutes();
+      const dayMenu = WEEKLY_MENU[appState.selectedDayIndex];
+      const banner = document.getElementById('advanceReminderBanner');
+      const textElem = document.getElementById('advanceReminderText');
+
+      if (hour === 7 && minute < 60) {
+        textElem.innerText = `🌅 ముందస్తు రిమైండర్: 8:00 AM కి అల్పాహారం సిద్ధమవుతోంది. ఈనాటి మెనూ: ${dayMenu.breakfast}`;
+        banner.classList.remove('hidden');
+      } else if (hour === 12 && minute < 60) {
+        textElem.innerText = `🍛 ముందస్తు రిమైండర్: 1:00 PM కి మధ్యాహ్న భోజనం. ఈనాటి మెనూ: ${dayMenu.lunch}`;
+        banner.classList.remove('hidden');
+      } else if (hour === 16 && minute < 60) {
+        textElem.innerText = `🍎 ముందస్తు రిమైండర్: 5:00 PM కి సాయంత్రపు స్నాక్. ఈనాటి మెనూ: ${dayMenu.snack}`;
+        banner.classList.remove('hidden');
+      } else if (hour === 19 && minute < 60) {
+        textElem.innerText = `🌙 ముందస్తు రిమైండర్: 8:00 PM కి రాత్రి భోజనం. ఈనాటి మెనూ: ${dayMenu.dinner}`;
+        banner.classList.remove('hidden');
+      } else {
+        banner.classList.add('hidden');
+      }
+    }
+
+    function speakAdvanceReminder() {
+      const text = document.getElementById('advanceReminderText').innerText;
+      speakJARVIS(text);
+    }
+
+    function dismissAdvanceReminder() {
+      document.getElementById('advanceReminderBanner').classList.add('hidden');
+    }
+
+    function snoozeCurrentReminder(minutes) {
+      const snoozeTime = new Date(Date.now() + minutes * 60000);
+      appState.snoozedUntil = snoozeTime.toISOString();
+      aiMemory.history.snoozeCount++;
+      savePersistedState();
+      const snoozeMsg = appState.language === 'te-IN' ?
+        `సరే, రిమైండర్ ను ${minutes} నిమిషాలు స్నూజ్ చేశాను. సమయానికి మళ్లీ గుర్తుచేస్తాను.` :
+        `Reminder snoozed for ${minutes} minutes. I will remind you again on time.`;
+      showToast(snoozeMsg);
+      speakJARVIS(snoozeMsg);
+    }
+
+    function markCurrentActivityDone() {
+      if (!activeNextEvent) updateNextActivityCountdown(getISTNow());
+      const event = activeNextEvent || { id: determineCurrentMeal(), telugu: "భోజనం", eng: "Meal" };
+
+      if (event.mealKey) {
+        appState.mealsStatus[event.mealKey] = "completed";
+      }
+      if (event.isWater) {
+        appState.waterCount = Math.min(16, appState.waterCount + 1);
+        renderWaterUI();
+      }
+      appState.checklist[event.id] = true;
+
+      savePersistedState();
+      renderChecklist();
+      renderMenu();
+      renderISTMonitoringTable();
+
+      const confMsg = appState.language === 'te-IN' ?
+        `${event.telugu || 'కార్యక్రమం'} విజయవంతంగా పూర్తయినట్లు నమోదు చేయబడింది. చాలా మంచిది!` :
+        `${event.eng || 'Activity'} marked as completed. Well done!`;
+
+      showToast(confMsg);
+      speakJARVIS(confMsg);
+    }
+
+    /* ---------------------------------------------------------
+       Smart Hydration Monitoring
+       --------------------------------------------------------- */
+    function addWaterGlass(delta) {
+      appState.waterCount = Math.max(0, Math.min(16, appState.waterCount + delta));
+      savePersistedState();
+      renderWaterUI();
+    }
+
+    function renderWaterUI() {
+      const count = appState.waterCount;
+      const target = 10;
+      const pct = Math.min(100, Math.round((count / target) * 100));
+
+      document.getElementById('waterGlassesRatio').innerText = `${count} / ${target} గ్లాసులు (${(count * 0.25).toFixed(1)}L)`;
+      document.getElementById('waterProgressBar').style.width = `${pct}%`;
+    }
+
+    /* ---------------------------------------------------------
+       7-Day Meal Menu Rendering
+       --------------------------------------------------------- */
+    function renderDayTabs() {
+      const container = document.getElementById('dayTabs');
+      container.innerHTML = "";
+
+      const daysShort = ["ఆది (Sun)", "సోమ (Mon)", "మంగళ (Tue)", "బుధ (Wed)", "గురు (Thu)", "శుక్ర (Fri)", "శని (Sat)"];
+
+      daysShort.forEach((d, idx) => {
+        const btn = document.createElement('button');
+        const isSelected = idx === appState.selectedDayIndex;
+        btn.className = `px-2.5 py-1 text-xs rounded-xl font-semibold transition whitespace-nowrap ${
+          isSelected 
+            ? 'bg-teal-600 text-white shadow-sm' 
+            : 'bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-zinc-300 hover:bg-slate-200'
+        }`;
+        btn.innerText = d;
+        btn.onclick = () => {
+          appState.selectedDayIndex = idx;
+          renderDayTabs();
+          renderMenu();
+        };
+        container.appendChild(btn);
+      });
+    }
+
+    function renderMenu() {
+      const menu = WEEKLY_MENU[appState.selectedDayIndex];
+      if (!menu) return;
+
+      document.getElementById('menu-breakfast').innerText = menu.breakfast;
+      document.getElementById('menu-lunch').innerText = menu.lunch;
+      document.getElementById('menu-snack').innerText = menu.snack;
+      document.getElementById('menu-dinner').innerText = menu.dinner;
+
+      ['breakfast', 'lunch', 'snack', 'dinner'].forEach(meal => {
+        const status = appState.mealsStatus[meal];
+        const btn = document.getElementById(`btn-status-${meal}`);
+
+        if (status === 'completed') {
+          btn.innerHTML = `<span class="text-emerald-600 dark:text-emerald-400 font-bold">✓ నిర్ధారించబడింది</span>`;
+        } else if (status === 'skipped') {
+          btn.innerHTML = `<span class="text-slate-400 font-bold">దాటవేయబడింది (Skipped)</span>`;
+        } else {
+          btn.innerHTML = `<span class="text-teal-700 dark:text-teal-400 font-semibold hover:underline">✓ తిన్నారా? నమోదు</span>`;
+        }
+      });
+    }
+
+    function toggleMealState(meal) {
+      if (appState.mealsStatus[meal] === 'completed') {
+        appState.mealsStatus[meal] = 'pending';
+        appState.checklist[meal] = false;
+      } else {
+        appState.mealsStatus[meal] = 'completed';
+        appState.checklist[meal] = true;
+      }
+      savePersistedState();
+      renderMenu();
+      renderChecklist();
+    }
+
+    function markMealDislike(meal) {
+      const menu = WEEKLY_MENU[appState.selectedDayIndex];
+      const dish = menu[meal];
+      if (!aiMemory.dislikes.includes(dish)) {
+        aiMemory.dislikes += `, ${dish}`;
+        savePersistedState();
+        showToast(`'${dish}' ను ఇష్టం లేని పదార్థాల జాబితాలో భద్రపరిచాను.`);
+      }
+    }
+
+    /* ---------------------------------------------------------
+       Checklist Rendering (Only Confirmed Counted)
+       --------------------------------------------------------- */
+    const CHECKLIST_ITEMS = [
+      { key: "wake", title: "ఉదయపు మేల్కొనడం (6:30 AM)", desc: "సుఖ నిద్ర విచారణ" },
+      { key: "water_1", title: "ఉదయపు నీరు (6:45 AM)", desc: "1-2 గ్లాసుల గోరువెచ్చని నీరు" },
+      { key: "walk_1", title: "వైద్యుల సూచనతో లలిత నడక (7:00 AM)", desc: "15-20 నిమిషాలు" },
+      { key: "breakfast", title: "అల్పాహారం (8:00 AM)", desc: "ఈనాటి పౌష్టిక అల్పాహారం" },
+      { key: "meds", title: "సూచించిన మందులు (9:30 AM)", desc: "ఫోలిక్ యాసిడ్ / క్యాల్షియం" },
+      { key: "lunch", title: "మధ్యాహ్న భోజనం (1:00 PM)", desc: "ఆకుకూరల పప్పు, కూరగాయలు & పెరుగు" },
+      { key: "rest", title: "మధ్యాహ్న విశ్రాంతి (2:00 PM)", desc: "ఎడమవైపు తిరిగి పడుకోవడం" },
+      { key: "snack", title: "సాయంత్రపు స్నాక్ & నీరు (5:00 PM)", desc: "పండ్లు, గింజలు" },
+      { key: "dinner", title: "రాత్రి భోజనం (8:00 PM)", desc: "తేలికపాటి రాత్రి భోజనం" },
+      { key: "sleep", title: "రాత్రి ప్రశాంత నిద్ర (10:00 PM)", desc: "స్క్రీన్ లేకుండా ప్రశాంత నిద్ర" }
+    ];
+
+    function renderChecklist() {
+      const container = document.getElementById('checklistContainer');
+      container.innerHTML = "";
+
+      let completedCount = 0;
+
+      CHECKLIST_ITEMS.forEach(item => {
+        const isDone = !!appState.checklist[item.key];
+        if (isDone) completedCount++;
+
+        const div = document.createElement('div');
+        div.className = `p-3 rounded-xl border flex items-center justify-between cursor-pointer transition ${
+          isDone 
+            ? 'bg-emerald-50/60 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-800' 
+            : 'bg-slate-50 dark:bg-zinc-800/60 border-slate-200 dark:border-zinc-700 hover:border-slate-300'
+        }`;
+
+        div.onclick = () => {
+          appState.checklist[item.key] = !isDone;
+          if (appState.mealsStatus[item.key] !== undefined) {
+            appState.mealsStatus[item.key] = !isDone ? 'completed' : 'pending';
+          }
+          savePersistedState();
+          renderChecklist();
+          renderMenu();
+        };
+
+        div.innerHTML = `
+          <div>
+            <div class="font-semibold text-xs ${isDone ? 'line-through text-slate-400 dark:text-zinc-500' : 'text-slate-800 dark:text-zinc-200'}">
+              ${item.title}
+            </div>
+            <div class="text-[11px] text-slate-500 dark:text-zinc-400">${item.desc}</div>
+          </div>
+          <div class="w-6 h-6 rounded-lg flex items-center justify-center text-xs font-bold ${
+            isDone ? 'bg-emerald-600 text-white' : 'border border-slate-300 dark:border-zinc-600 text-transparent'
+          }">
+            ✓
+          </div>
+        `;
+
+        container.appendChild(div);
+      });
+
+      const pct = Math.round((completedCount / CHECKLIST_ITEMS.length) * 100);
+      document.getElementById('completedRatioBadge').innerText = `${pct}% పూర్తయింది (${completedCount}/${CHECKLIST_ITEMS.length})`;
+    }
+
+    /* ---------------------------------------------------------
+       Full Schedule Table (Modal)
+       --------------------------------------------------------- */
+    function renderScheduleList() {
+      const container = document.getElementById('scheduleListContainer');
+      container.innerHTML = "";
+
+      SCHEDULE.forEach(item => {
+        const row = document.createElement('div');
+        row.className = "py-2.5 flex items-center justify-between";
+        row.innerHTML = `
+          <div class="flex items-center gap-2.5">
+            <span class="text-base">${item.icon}</span>
+            <div>
+              <span class="font-bold text-slate-800 dark:text-zinc-200">${item.time}</span>
+              <span class="ml-2 text-slate-700 dark:text-zinc-300">${item.telugu}</span>
+            </div>
+          </div>
+          <span class="text-[10px] text-slate-400">${item.eng}</span>
+        `;
+        container.appendChild(row);
+      });
+    }
+
+    /* ---------------------------------------------------------
+       Husband Summary & Consent Management
+       --------------------------------------------------------- */
+    
+    function shareHusbandSummaryWhatsApp() {
+      const summaryText = buildHusbandSummaryText();
+      const encoded = encodeURIComponent(summaryText);
+      window.open(`https://api.whatsapp.com/send?text=${encoded}`, '_blank');
+      showToast("వాట్సాప్ ఓపెన్ చేయబడింది");
+    }
+
+    function buildHusbandSummaryText() {
+      const now = getISTNow();
+      const dateStr = now.toLocaleDateString('te-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+      return `💌 JARVIS దినచర్య సారాంశం (Husband Care Summary)\n📅 తేదీ: ${dateStr}\n\n💧 నీటి వినియోగం: ${appState.waterCount} / 10 గ్లాసులు\n🥞 అల్పాహారం: ${appState.mealsStatus.breakfast === 'completed' ? '✓ తీసుకున్నారు' : 'పెండింగ్'}\n🍛 మధ్యాహ్న భోజనం: ${appState.mealsStatus.lunch === 'completed' ? '✓ తీసుకున్నారు' : 'పెండింగ్'}\n🍲 రాత్రి భోజనం: ${appState.mealsStatus.dinner === 'completed' ? '✓ తీసుకున్నారు' : 'పెండింగ్'}\n💊 సూచించిన మందులు: ${appState.checklist.meds ? '✓ వేసుకున్నారు' : 'పెండింగ్'}\n🛌 విశ్రాంతి: ${appState.checklist.rest ? '✓ తీసుకున్నారు' : 'పెండింగ్'}\n\n💖 ఆరోగ్యం అంతా సాధారణంగా మరియు క్షేమంగా ఉంది.`;
+    }
+
+    function toggleHusbandConsent() {
+      appState.husbandConsent = document.getElementById('husbandConsentToggle').checked;
+      savePersistedState();
+      renderHusbandSummaryPreview();
+    }
+
+    function renderHusbandSummaryPreview() {
+      const preview = document.getElementById('husbandSummaryPreview');
+      if (!appState.husbandConsent) {
+        preview.innerHTML = `<span class="text-rose-600 font-bold">⚠️ భార్య అనుమతి నిలిపివేయబడింది. ఈ సారాంశం పంచుకోబడదు.</span>`;
+        return;
+      }
+
+      const pendingMeals = Object.entries(appState.mealsStatus).filter(([_, s]) => s === 'pending').length;
+
+      preview.innerHTML = `
+        <strong>నేటి గర్భధారణ దినచర్య సారాంశం (Pregnancy Routine Summary):</strong><br>
+        • అల్పాహారం: ${appState.mealsStatus.breakfast === 'completed' ? 'పూర్తయింది (Completed)' : 'పెండింగ్'}<br>
+        • మధ్యాహ్న భోజనం: ${appState.mealsStatus.lunch === 'completed' ? 'పూర్తయింది (Completed)' : 'పెండింగ్'}<br>
+        • సాయంత్రపు స్నాక్: ${appState.mealsStatus.snack === 'completed' ? 'పూర్తయింది (Completed)' : 'పెండింగ్'}<br>
+        • రాత్రి భోజనం: ${appState.mealsStatus.dinner === 'completed' ? 'పూర్తయింది (Completed)' : 'పెండింగ్'}<br>
+        • నీరు: ${appState.waterCount} నిర్ధారించిన గ్లాసులు (${(appState.waterCount * 0.25).toFixed(1)}L)<br>
+        • సూచించిన మందులు: ${appState.checklist.meds ? 'పూర్తయింది' : 'పెండింగ్'}<br>
+        • విశ్రాంతి: ${appState.checklist.rest ? 'పూర్తయింది' : 'పెండింగ్'}<br>
+        <span class="text-teal-600 font-semibold mt-1 inline-block">${pendingMeals > 0 ? `${pendingMeals} రిమైండర్లు ఇంకా పెండింగ్‌లో ఉన్నాయి.` : 'నేటి అన్ని దినచర్యలు విజయవంతంగా పూర్తయ్యాయి.'}</span>
+      `;
+    }
+
+    function copyHusbandSummary() {
+      if (!appState.husbandConsent) {
+        alert("భార్య అనుమతి లేకుండా ఈ సారాంశాన్ని పంచుకోలేరు.");
+        return;
+      }
+      const text = `Today's pregnancy routine summary:\n- Breakfast: ${appState.mealsStatus.breakfast}\n- Lunch: ${appState.mealsStatus.lunch}\n- Snack: ${appState.mealsStatus.snack}\n- Dinner: ${appState.mealsStatus.dinner}\n- Water: ${appState.waterCount} confirmed entries\n- Medicine: ${appState.checklist.meds ? 'Confirmed' : 'Pending'}\n- Rest: ${appState.checklist.rest ? 'Completed' : 'Pending'}`;
+      navigator.clipboard.writeText(text).then(() => {
+        alert("సారాంశం కాపీ చేయబడింది! వాట్సాప్ లేదా మెసేజ్ ద్వారా పంపవచ్చు.");
+      });
+    }
+
+    /* ---------------------------------------------------------
+       9:00 PM Daily Report
+       --------------------------------------------------------- */
+    function populateTodayReport() {
+      const container = document.getElementById('reportContent');
+      const completed = Object.values(appState.checklist).filter(Boolean).length;
+      const total = CHECKLIST_ITEMS.length;
+      const pct = Math.round((completed / total) * 100);
+
+      container.innerHTML = `
+        <div class="bg-teal-50 dark:bg-teal-950/40 p-4 rounded-2xl border border-teal-200 dark:border-teal-800 text-center">
+          <div class="text-3xl font-black text-teal-600 dark:text-teal-400">${pct}%</div>
+          <div class="text-xs font-semibold text-teal-800 dark:text-teal-300 mt-1">నేటి నిర్ధారిత పరిపూర్ణత (Confirmed Adherence)</div>
+        </div>
+
+        <div class="space-y-1.5 border border-slate-200 dark:border-zinc-800 rounded-xl p-3">
+          <div class="flex justify-between"><strong>తేదీ & వారం:</strong> <span>${new Date().toLocaleDateString('te-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span></div>
+          <div class="flex justify-between"><strong>నీటి వినియోగం:</strong> <span>${appState.waterCount} గ్లాసులు (${(appState.waterCount * 0.25).toFixed(1)} L)</span></div>
+          <div class="flex justify-between"><strong>అల్పాహారం:</strong> <span class="font-semibold text-emerald-600">${appState.mealsStatus.breakfast}</span></div>
+          <div class="flex justify-between"><strong>మధ్యాహ్న భోజనం:</strong> <span class="font-semibold text-emerald-600">${appState.mealsStatus.lunch}</span></div>
+          <div class="flex justify-between"><strong>సాయంత్రపు స్నాక్:</strong> <span class="font-semibold text-emerald-600">${appState.mealsStatus.snack}</span></div>
+          <div class="flex justify-between"><strong>రాత్రి భోజనం:</strong> <span class="font-semibold text-emerald-600">${appState.mealsStatus.dinner}</span></div>
+          <div class="flex justify-between"><strong>సూచించిన మందులు:</strong> <span>${appState.checklist.meds ? '✓ వేసుకున్నారు' : 'పెండింగ్'}</span></div>
+          <div class="flex justify-between"><strong>స్నూజ్ చేసినవి:</strong> <span>${aiMemory.history.snoozeCount} సార్లు</span></div>
+        </div>
+      `;
+    }
+
+    function copyTodayReport() {
+      const completed = Object.values(appState.checklist).filter(Boolean).length;
+      const text = `📊 JARVIS 9:00 PM Care Report:\nDate: ${new Date().toLocaleDateString('te-IN')}\nAdherence: ${completed}/${CHECKLIST_ITEMS.length}\nWater: ${appState.waterCount} glasses\nBreakfast: ${appState.mealsStatus.breakfast}\nLunch: ${appState.mealsStatus.lunch}\nDinner: ${appState.mealsStatus.dinner}`;
+      navigator.clipboard.writeText(text).then(() => showToast("నివేదిక క్లిప్‌బోర్డ్‌కి కాపీ చేయబడింది!"));
+    }
+
+    /* ---------------------------------------------------------
+       Sunday Weekly AI Learning Report
+       --------------------------------------------------------- */
+    function populateWeeklyReport() {
+      const container = document.getElementById('weeklyReportContent');
+      container.innerHTML = `
+        <div class="p-3 bg-indigo-50 dark:bg-indigo-950/40 rounded-xl border border-indigo-200 dark:border-indigo-800">
+          <div class="font-bold text-sm text-indigo-900 dark:text-indigo-200 mb-1">📅 ఈ వారపు సారాంశం (Weekly Summary):</div>
+          <ul class="space-y-1">
+            <li>• వారం మొత్తం నిర్ధారించిన భోజనాలు: <strong>${aiMemory.history.weeklyConfirmedMeals} / 21</strong></li>
+            <li>• సగటు రోజువారీ నీటి వినియోగం: <strong>8 గ్లాసులు (2.0L)</strong></li>
+            <li>• తరచుగా స్నూజ్ చేసిన సమయం: <strong>8:00 AM (అల్పాహారం)</strong></li>
+            <li>• తరచుగా ఇష్టపడిన ఆహారాలు: <strong>${aiMemory.favourites}</strong></li>
+            <li>• ఇష్టం లేని పదార్థాలుగా గుర్తించినవి: <strong>${aiMemory.dislikes}</strong></li>
+          </ul>
+        </div>
+
+        <div class="p-3 bg-slate-50 dark:bg-zinc-800 rounded-xl border border-slate-200 dark:border-zinc-700">
+          <div class="font-bold text-slate-800 dark:text-zinc-200 mb-1">🤖 AI అభ్యాస సిఫార్సులు (Learning Recommendations):</div>
+          <p class="text-slate-600 dark:text-zinc-400">
+            గత వారం భోజన విచారణలను బట్టి, సోమవారం మరియు బుధవారం అల్పాహారాన్ని 8:00 AM బదులుగా 8:30 AM కి రీషెడ్యూల్ చేయడం అనుకూలంగా ఉంటుంది. మీ అనుమతితో మాత్రమే మార్చబడుతుంది.
+          </p>
+        </div>
+      `;
+    }
+
+    /* ---------------------------------------------------------
+       AI Memory Save & Settings
+       --------------------------------------------------------- */
+    function saveAIMemory() {
+      aiMemory.favourites = document.getElementById('memFavourites').value;
+      aiMemory.dislikes = document.getElementById('memDislikes').value;
+      aiMemory.allergies = document.getElementById('memAllergies').value;
+      aiMemory.doctorDiet = document.getElementById('memDoctorDiet').value;
+      aiMemory.discomfortFoods = document.getElementById('memDiscomfort').value;
+
+      savePersistedState();
+      closeModal('memoryModal');
+      showToast("AI మెమరీ విజయవంతంగా భద్రపరచబడింది."); speakJARVIS(appState.language === 'te-IN' ? "మీ వ్యక్తిగత ప్రాధాన్యతలు AI మెమరీలో భద్రపరచబడ్డాయి." : "AI Memory saved successfully."); closeModal('memoryModal');
+    }
+
+    function saveUserSettings() {
+      if (!appState.settings) appState.settings = {};
+
+      const vType = document.getElementById('settingVoiceType');
+      if (vType) appState.settings.voiceType = vType.value;
+
+      const aVoice = document.getElementById('settingAutoVoiceReminder');
+      if (aVoice) appState.settings.autoVoiceReminder = aVoice.checked;
+
+      const advRem = document.getElementById('settingAdvanceReminder');
+      if (advRem) appState.settings.advanceReminder = advRem.checked;
+
+      const sWake = document.getElementById('settingWakeup');
+      if (sWake) appState.settings.wakeup = sWake.value;
+
+      const sSleep = document.getElementById('settingSleep');
+      if (sSleep) appState.settings.sleep = sSleep.value;
+
+      const sMed = document.getElementById('settingMedicine');
+      if (sMed) appState.settings.medicine = sMed.value;
+
+      const sEm = document.getElementById('settingEmergencyContact');
+      if (sEm) appState.settings.emergencyContact = sEm.value;
+
+      const sLang = document.getElementById('settingLanguage');
+      if (sLang) setLanguage(sLang.value);
+
+      const emBtn = document.getElementById('emergencyCallBtn');
+      if (emBtn && appState.settings.emergencyContact) {
+        emBtn.href = `tel:${appState.settings.emergencyContact}`;
+      }
+
+      savePersistedState();
+      renderISTMonitoringTable();
+      closeModal('settingsModal');
+
+      const savedMsg = appState.language === 'te-IN' ? "సెట్టింగులు విజయవంతంగా భద్రపరచబడ్డాయి." : "Settings have been successfully saved.";
+      showToast(savedMsg);
+      speakJARVIS(savedMsg);
+    }
+
+
+    function setLanguage(lang) {
+      appState.language = lang;
+      const labels = {
+        'te-IN': "తెలుగు (Telugu)",
+        'en-IN': "English (India)",
+        'hi-IN': "हिन्दी (Hindi)",
+        'en-US': "English (US)"
+      };
+
+      const langEl = document.getElementById('currentLangLabel');
+      if (langEl) langEl.innerText = labels[lang] || "తెలుగు";
+      const langBtn = document.getElementById('langBtn');
+      if (langBtn && !langEl) langBtn.innerText = `🗣️ ${labels[lang] || "తెలుగు"}`;
+
+      const selLang = document.getElementById('settingLanguage');
+      if (selLang) selLang.value = lang;
+
+      savePersistedState();
+      updateLiveClock();
+      renderISTMonitoringTable();
+
+      if (recognition) {
+        recognition.lang = lang;
+      }
+    }
+
+    function toggleLanguage(forcedLang = null) {
+      if (forcedLang) {
+        setLanguage(forcedLang);
+      } else {
+        const nextLang = appState.language === 'te-IN' ? 'en-IN' : 'te-IN';
+        setLanguage(nextLang);
+      }
+      const msg = appState.language === 'te-IN' ? "భాషను తెలుగులోకి మార్చాను. నేను మీకు ఏ విధంగా సహాయపడగలను?" : "Language switched to English. How can I assist you today?";
+      showToast(appState.language === 'te-IN' ? "భాష: తెలుగు (Telugu)" : "Language: English");
+      speakJARVIS(msg);
+    }
+
+
+    
+    function cycleAssistantMode() {
+      const modes = ['all_in_one', 'pregnancy_care', 'daily_wellness'];
+      const labels = {
+        'all_in_one': "ఆల్-ఇన్-వన్ సహాయకుడు",
+        'pregnancy_care': "గర్భధారణ సంరక్షణ (Pregnancy Care)",
+        'daily_wellness': "ఆరోగ్య & జీవన సహాయకుడు (Wellness)"
+      };
+      if (!appState.settings) appState.settings = {};
+      const cur = appState.settings.assistantMode || 'all_in_one';
+      const nextIdx = (modes.indexOf(cur) + 1) % modes.length;
+      appState.settings.assistantMode = modes[nextIdx];
+      const lbl = document.getElementById('currentModeLabel');
+      if (lbl) lbl.innerText = labels[appState.settings.assistantMode];
+      savePersistedState();
+      showToast(`మోడ్: ${labels[appState.settings.assistantMode]}`);
+    }
+
+    function openModal(id) {
+      document.getElementById(id).classList.remove('hidden');
+      if (id === 'reportModal') populateTodayReport();
+      if (id === 'scheduleModal') renderScheduleList();
+      if (id === 'weeklyReportModal') populateWeeklyReport();
+      if (id === 'memoryModal') {
+        const favEl = document.getElementById('memFavourites');
+        if (favEl && aiMemory.favourites) favEl.value = aiMemory.favourites;
+        const disEl = document.getElementById('memDislikes');
+        if (disEl && aiMemory.dislikes) disEl.value = aiMemory.dislikes;
+        const allEl = document.getElementById('memAllergies');
+        if (allEl && aiMemory.allergies) allEl.value = aiMemory.allergies;
+        const dietEl = document.getElementById('memDoctorDiet');
+        if (dietEl && aiMemory.doctorDiet) dietEl.value = aiMemory.doctorDiet;
+      }
+      if (id === 'settingsModal') {
+        if (!appState.settings) appState.settings = {};
+        const vType = document.getElementById('settingVoiceType');
+        if (vType) vType.value = appState.settings.voiceType || 'female_sweet';
+        const aVoice = document.getElementById('settingAutoVoiceReminder');
+        if (aVoice) aVoice.checked = appState.settings.autoVoiceReminder !== false;
+        const advRem = document.getElementById('settingAdvanceReminder');
+        if (advRem) advRem.checked = appState.settings.advanceReminder !== false;
+        const sLang = document.getElementById('settingLanguage');
+        if (sLang) sLang.value = appState.language || 'te-IN';
+        const sWake = document.getElementById('settingWakeup');
+        if (sWake) sWake.value = appState.settings.wakeup || '06:30';
+        const sSleep = document.getElementById('settingSleep');
+        if (sSleep) sSleep.value = appState.settings.sleep || '22:00';
+        const sMed = document.getElementById('settingMedicine');
+        if (sMed) sMed.value = appState.settings.medicine || 'ఫోలిక్ యాసిడ్ / క్యాల్షియం & విటమిన్లు';
+        const sEm = document.getElementById('settingEmergencyContact');
+        if (sEm) sEm.value = appState.settings.emergencyContact || '108';
+      }
+      if (id === 'husbandModal') renderHusbandSummaryPreview();
+      if (id === 'weeklyReportModal') populateWeeklyReport();
+    }
+
+    function closeModal(id) {
+      document.getElementById(id).classList.add('hidden');
+    }
+
+    // Initialize Application
+    window.addEventListener('DOMContentLoaded', () => {
+      loadPersistedState();
+      renderDayTabs();
+      renderMenu();
+      renderWaterUI();
+      renderChecklist();
+      updateLiveClock();
+      setInterval(updateLiveClock, 1000);
+      initSpeechRecognition();
+
+      if (appState.settings.emergencyContact) {
+        document.getElementById('emergencyCallBtn').href = `tel:${appState.settings.emergencyContact}`;
+      }
+    });
+  </script>
+</body>
+</html>
